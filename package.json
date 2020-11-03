@@ -1,0 +1,42 @@
+{
+  "name": "patchpack",
+  "version": "0.1.0",
+  "description": "Json patch serializer",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "banchmark": "ts-node ./temp/banchmark.ts",
+    "patch": "tsc && npm version patch",
+    "major": "tsc && npm version major",
+    "minor": "tsc && npm version minor",
+    "build": "tsc",
+    "test": "jest --verbose --coverage"
+  },
+  "keywords": [
+    "schema",
+    "jsonpatch",
+    "serializer",
+    "patch-compression"
+  ],
+  "author": "Damir Yusipov",
+  "license": "MIT",
+  "dependencies": {
+    "notepack.io": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.0",
+    "jest": "^26.0.1",
+    "ts-jest": "^26.1.0",
+    "ts-node": "^8.10.2",
+    "tslint": "^6.1.2",
+    "typescript": "^3.9.5"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(ts?|tsx?|js?|jsx?)$",
+    "moduleFileExtensions": [ "ts","tsx", "js", "jsx", "json", "node" ],
+    "collectCoverage": true
+  }
+}
