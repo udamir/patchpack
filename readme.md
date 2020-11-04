@@ -10,6 +10,13 @@ A binary JsonPatch serializer based on schema. Efficiently encode state object a
 npm install --save patchpack
 ```
 
+## Browser
+A browser version of patchpack is also available:
+```
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.1.1/browser/patchpack.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.1.1/browser/patchpack.js"></script>
+```
+
 ## License
 
 MIT
