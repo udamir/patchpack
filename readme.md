@@ -205,6 +205,42 @@ console.log(pp2.decodePatch(encodedPatch))
 
 ```
 </td></tr>
+
+<tr><td>
+  
+```ts
+// update state
+state.foo.baz = true
+
+// generate patch
+const patch = { 
+  op: "replace", 
+  path: "/foo/baz", 
+  value: true 
+}
+
+// encode patch ------- send to client --------->
+const encodedPatch = pp.encodePatch(patch)
+console.log(encodedPatch2.length) 
+// 5
+
+console.log(JSON.stringify(patch2).length)
+// 47
+```
+</td><td>
+  
+```ts
+console.log(pp2.decodePatch(encodedPatch2))
+// { 
+//   op: "replace", 
+//   path: "/foo/baz", 
+//   value: true 
+// }
+
+```
+</td></tr>
+
+
 </table>
 
 ## License
