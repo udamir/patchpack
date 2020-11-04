@@ -39,6 +39,7 @@ export interface ISchemaNode {
   parent: number
   index: number
   items: string[]
+  ref: SchemaNode
 }
 
 export const schemaNode = (node: SchemaNode = [] as any): ISchemaNode => ({
@@ -47,6 +48,7 @@ export const schemaNode = (node: SchemaNode = [] as any): ISchemaNode => ({
   parent: node[2],
   index: node[3] as number,
   items: node.slice(4) as string[],
+  ref: node
 })
 
 //   SchemaPatch = [ op,     id,     prop,   value/oldValue ]

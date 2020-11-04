@@ -1,24 +1,6 @@
 import { IJsonPatch, PatchPack, Schema } from ".."
 
-interface IClient {
-  name: string
-}
-
-interface IObject {
-  id: number,
-  name: string
-}
-
-interface IObjectEx extends IObject {
-  foo: string
-}
-
-interface IState {
-  clients: { [key: string]: IClient }
-  objects: (IObject | IObjectEx)[]
-}
-
-const state: IState = {
+const state: any = {
   clients: {
     "1": { name: "Foo" },
     "2": { name: "Baz" }
@@ -31,19 +13,13 @@ const state: IState = {
 
 const serverSchema = new Schema()
 
-serverSchema.addType("State",  ["clients", "objects"])
-serverSchema.addType("Client", ["name"])
-serverSchema.addType("ClientEx", ["name", "info"])
-serverSchema.addType("Object", ["id", "name"])
-serverSchema.addType("ObjectEx", ["id", "name", "foo"])
+serverSchema.addTypes({
+  "State": ["clients", "objects"],
+  "Client": ["name", "info"],
+  "Object": ["id", "name", "foo"],
+})
 
-serverSchema.addObjectNode (0, "State", -1, -1)
-serverSchema.addMapNode    (1,           0, "clients")
-serverSchema.addObjectNode (2, "Client", 1, "1")
-serverSchema.addObjectNode (3, "Client", 1, "2")
-serverSchema.addArrayNode  (4,           0, "objects")
-serverSchema.addObjectNode (5, "Object", 4, 0)
-serverSchema.addObjectNode (6, "ObjectEx", 4, 1)
+serverSchema.buildFrom(state)
 
 const server = new PatchPack(serverSchema)
 
@@ -58,13 +34,23 @@ describe("Copy schema from server to client ", () => {
 
 describe("Encode / decode snapshot", () => {
   test(`should be equal full state snapshot on server and client`, () => {
-    const encoded = server.encodeSnapshot(state, 0)
+    const encoded = server.encodeSnapshot(state)
     expect(client.decodeSnapshot(encoded, 0)).toEqual(state)
   })
 
   test(`should be equal node snapshot on server and client`, () => {
     const encoded = server.encodeSnapshot(state.objects, 4)
     expect(client.decodeSnapshot(encoded, 4)).toEqual(state.objects)
+  })
+
+  const t1 = () => server.encodeSnapshot(state, 12)
+  test('should throw error encoding snapshot with not existing id', () => {
+    expect(t1).toThrow("Cannot encode snapshot - node with id 12 not found!")
+  })
+
+  const t2 = () => server.encodeSnapshot(state, 4)
+  test('should throw error encoding snapshot with not existing id', () => {
+    expect(t2).toThrow("Cannot encode snapshot - array expected on path: /objects")
   })
 })
 

@@ -8,8 +8,19 @@ import { Schema } from "./schema"
 
 export class PatchPack {
   public schema: Schema
-  constructor (schema: ISchema) {
+  constructor (schema?: ISchema) {
     this.schema = new Schema(schema)
+  }
+
+  public encodeSchema() {
+    return notepack.encode(this.schema)
+  }
+
+  public decodeSchema(buffer: Buffer) {
+    const schema = notepack.decode<ISchema>(buffer)
+    this.schema.types = schema && schema.types || []
+    this.schema.nodes = schema && schema.nodes || []
+    return schema
   }
 
   public encodeSchemaPatch(patch: IJsonPatch): Buffer {
@@ -30,9 +41,17 @@ export class PatchPack {
     const node = name === undefined ? sn: this.schema.getChildNode(sn, name)
     if (!node || !snapshot) { return snapshot }
 
-    if (node.type === -2) {
+    if (node.type === NODE_MAP_TYPE) {
+      if (typeof snapshot !== "object") {
+        const path = this.schema.getNodePath(sn) + (name === undefined ? "" : "/" + name)
+        throw new Error(`Cannot encode snapshot - object expected on path: ${path}`)
+      }
       return node.items!.map((key: string, i) => this.encodeNode(snapshot[key], node, key))
     } else if (node.type === -1) {
+      if (!Array.isArray(snapshot)) {
+        const path = this.schema.getNodePath(sn) + (name === undefined ? "" : "/" + name)
+        throw new Error(`Cannot encode snapshot - array expected on path: ${path}`)
+      }
       return snapshot.map((item: any, i: number) => this.encodeNode(item, node, i))
     } else {
       const props = this.schema.getTypeProps(node.type)
@@ -40,10 +59,10 @@ export class PatchPack {
     }
   }
 
-  public encodeSnapshot(snapshot: any, nodeId: number): Buffer {
+  public encodeSnapshot(snapshot: any, nodeId: number = 0): Buffer {
     const node = this.schema.getNode(nodeId)
     if (!node) {
-      throw new Error(`Cannot encode Snapshot - node with id ${nodeId} not found!`)
+      throw new Error(`Cannot encode snapshot - node with id ${nodeId} not found!`)
     }
 
     return notepack.encode(this.encodeNode(snapshot, node))
@@ -123,7 +142,7 @@ export class PatchPack {
     }
   }
 
-  public decodeSnapshot<T = any>(buffer: Buffer, nodeId: number): T {
+  public decodeSnapshot<T = any>(buffer: Buffer, nodeId: number = 0): T {
     return this.decodeNode(nodeId, notepack.decode(buffer))
   }
 

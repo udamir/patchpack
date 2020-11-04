@@ -6,6 +6,7 @@ import {
 export class Schema {
   public types: SchemaType[]
   public nodes: SchemaNode[]
+  public nextId: number = 0
 
   constructor (schema?: ISchema) {
     this.types = schema && schema.types || []
@@ -16,17 +17,17 @@ export class Schema {
     const patch: IJsonPatch = { op: "add", path: `/${type}/${index}`, value: [ ...value ] }
     if (type === "nodes" && typeof value[3] === "string") {
       // value[3] is map key => need to add key to parent map
-      const parentIndex = this.nodes.findIndex((n) => n[0] === value[2])
-      const keyIndex = this.nodes[parentIndex].findIndex((n) => n === value[3])
+      const parent = this.getNode(value[2] as number)!
+      const keyIndex = parent.items.findIndex((n) => n === value[3])
       // check if key already exists
-      if (keyIndex < 4) {
+      if (keyIndex < 0) {
         // add key to map node
-        this.addMapNodeKey(parentIndex, value[3])
+        this.addMapNodeKey(parent.id, value[3])
         // put key index in value[3]
-        value[3] = this.nodes[parentIndex].length - 5
+        value[3] = parent.items.length
       } else {
         // put key index in value[3]
-        value[3] = keyIndex - 4
+        value[3] = keyIndex
       }
     }
     // add value to schema
@@ -48,6 +49,73 @@ export class Schema {
     check(this.types.find((n) => n[0] === name), `Cannot add type to schema - type ${name} already exists!`)
 
     return this.add("types", [name, ...props])
+  }
+
+  public addTypes(types: { [type: string]: string[] }): IJsonPatch[] {
+    return Object.keys(types).map((key) => this.addType(key, types[key]))
+  }
+
+  public findType(keys: string[]): string | null {
+    const type = this.types.find((t) => {
+      for (const key of keys) {
+        if (t.indexOf(key) < 1) { return false }
+      }
+      return true
+    })
+    return type ? type[0] : null
+  }
+
+  private createNode(value: any, meta: any): IJsonPatch[] {
+    const { parentId, key } = meta
+    const patches: IJsonPatch[] = []
+    if (Array.isArray(value)) {
+      const nodeId = this.nextId++
+      patches.push(this.addArrayNode(nodeId, parentId, key))
+      value.forEach((item, i) => {
+        patches.push(...this.createNode(item, { parentId: nodeId, key: i }))
+      })
+    } else if (typeof value === "object") {
+      const nodeId = this.nextId++
+      const type = this.findType(Object.keys(value))
+      if (!type) {
+        patches.push(this.addMapNode(nodeId, parentId, key))
+      } else {
+        patches.push(this.addObjectNode(nodeId, type, parentId, key))
+      }
+      Object.keys(value).forEach((childKey) => {
+        patches.push(...this.createNode(value[childKey], { parentId: nodeId, key: childKey }))
+      })
+    } else {
+      const parent = this.getNode(parentId)!
+      const path = this.getNodePath(parent)
+      if (typeof value === "function" || typeof value === "symbol") {
+        throw new Error (`Cannot build schema - wrong value on path ${path}/${key}`)
+      }
+      if (parent.type === NODE_MAP_TYPE) {
+        patches.push(this.addMapNodeKey(parentId, key)!)
+      }
+      return []
+    }
+    return patches
+  }
+
+  public buildFrom(value: any): IJsonPatch[] {
+    this.nodes.length = 0
+    this.nextId = 0
+    return this.createNode(value, { parentId: -1, key: -1 })
+  }
+
+  public nodeFrom(value: any, path: string): IJsonPatch[] {
+    const pathArr = path.split("/").reverse()
+    const key = pathArr[0]
+    let node = schemaNode(this.nodes[0])
+    while (pathArr.length > 1) {
+      node = this.getChildNode(node, pathArr.pop()!)!
+      if (!node) {
+        throw new Error(`Cannot add new node - wrong path: ${path}`)
+      }
+    }
+    return this.createNode(value, { parentId: node.id, key })
   }
 
   public addArrayNode(nodeId: number, parentId: number, name: number | string): IJsonPatch {
@@ -79,9 +147,11 @@ export class Schema {
     return this.add("nodes", [ nodeId, type, parentId, index, ...keys ])
   }
 
-  public addMapNodeKey(index: number, key: string): IJsonPatch | undefined {
+  public addMapNodeKey(nodeId: number, key: string): IJsonPatch | undefined {
+    const index = this.nodes.findIndex((n) => n[0] === nodeId)
     const node = this.nodes[index]
-    check(!node, `Cannot add key to schema - node with index ${index} not found`)
+    check(!node, `Cannot add key to schema - node with id ${nodeId} not found`)
+    check(node[1] !== NODE_MAP_TYPE, `Cannot add key to schema - node with id ${nodeId} must be map type`)
     check(node.slice(4).indexOf(key) >= 0, `Cannot add key to schema - key ${key} already exists!`)
 
     node.push(key)

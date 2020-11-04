@@ -3,19 +3,32 @@ import { NODE_ARRAY_TYPE, NODE_MAP_TYPE, Schema } from ".."
 const schema = new Schema()
 
 describe("Add types to schema", () => {
+  const types = {
+    "State": ["clients", "objects"],
+    "Client": ["name"],
+    "ClientEx": ["name", "info"],
+    "Object": ["id", "name"]
+  }
+  test(`should add types to schema`, () => {
+    const patches = schema.addTypes(types)
+    expect(schema.types.length).toEqual(Object.keys(types).length)
+
+    Object.keys(types).forEach((type, i) => {
+      const props = (types as any)[type]
+      expect(schema.types[i]).toEqual([ type, ...props ])
+      expect(patches[i]).toEqual({ op: "add", path: `/types/${i}`, value: [ type, ...props ] })
+    })
+  })
+
+
   test(`should add type to schema types array`, () => {
     const index = schema.types.length
-    const type = "State"
-    const props = ["clients", "objects"]
+    const type = "ObjectEx"
+    const props = ["id", "name", "foo"]
     const patch = schema.addType(type, props)
     expect(schema.types[index]).toEqual([ type, ...props ])
 
     expect(patch).toEqual({ op: "add", path: `/types/${index}`, value: [ type, ...props ] })
-
-    schema.addType("Client", ["name"])
-    schema.addType("ClientEx", ["name", "info"])
-    schema.addType("Object", ["id", "name"])
-    schema.addType("ObjectEx", ["id", "name", "foo"])
   })
 
   const t = () => schema.addType("State", [])
@@ -87,6 +100,26 @@ describe("Add map child node to schema", () => {
     expect(schema.getNode(1)!.items.includes(id)).toEqual(true)
 
     schema.addObjectNode (3, "ClientEx", 1, "2")
+  })
+})
+
+describe("Add key to map node", () => {
+  const id = 1
+  const key = "test"
+  test(`should add key to map `, () => {
+    const nodeIndex = schema.nodes.findIndex((n) => n[0] === id)
+    const itemIndex = schema.nodes[nodeIndex].length
+    const patch = schema.addMapNodeKey(id, key)
+
+    expect(schema.nodes[nodeIndex].length).toEqual(itemIndex + 1)
+    expect(schema.nodes[nodeIndex][itemIndex]).toEqual(key)
+
+    expect(patch).toEqual({ op: "add", path: `/nodes/${nodeIndex}/${itemIndex}`, value: key })
+  })
+
+  const t1 = () => schema.addMapNodeKey(id, key)
+  test('should throw error on adding existing key', () => {
+    expect(t1).toThrow("Cannot add key to schema - key test already exists!")
   })
 })
 
