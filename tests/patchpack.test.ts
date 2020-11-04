@@ -4,10 +4,6 @@ interface IClient {
   name: string
 }
 
-interface IClientEx extends IClient {
-  info: string
-}
-
 interface IObject {
   id: number,
   name: string
@@ -18,14 +14,14 @@ interface IObjectEx extends IObject {
 }
 
 interface IState {
-  clients: { [key: string]: IClient | IClientEx }
+  clients: { [key: string]: IClient }
   objects: (IObject | IObjectEx)[]
 }
 
 const state: IState = {
   clients: {
     "1": { name: "Foo" },
-    "2": { name: "Baz", info: "BazBaz" }
+    "2": { name: "Baz" }
   },
   objects: [
     { id: 1, name: "obj1" },
@@ -44,7 +40,7 @@ serverSchema.addType("ObjectEx", ["id", "name", "foo"])
 serverSchema.addObjectNode (0, "State", -1, -1)
 serverSchema.addMapNode    (1,           0, "clients")
 serverSchema.addObjectNode (2, "Client", 1, "1")
-serverSchema.addObjectNode (3, "ClientEx", 1, "2")
+serverSchema.addObjectNode (3, "Client", 1, "2")
 serverSchema.addArrayNode  (4,           0, "objects")
 serverSchema.addObjectNode (5, "Object", 4, 0)
 serverSchema.addObjectNode (6, "ObjectEx", 4, 1)

@@ -1,16 +1,24 @@
 {
   "name": "patchpack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Json patch serializer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/*.js",
+    "browser"
+  ],
+  "browser": {
+    "./dist/index.js": "./browser/patchpck.js"
+  },
   "scripts": {
     "banchmark": "ts-node ./temp/banchmark.ts",
     "patch": "tsc && npm version patch",
     "major": "tsc && npm version major",
     "minor": "tsc && npm version minor",
     "build": "tsc",
-    "test": "jest --verbose --coverage"
+    "test": "jest --verbose --coverage",
+    "browser": "webpack"
   },
   "keywords": [
     "schema",
@@ -27,16 +35,27 @@
     "@types/jest": "^26.0.0",
     "jest": "^26.0.1",
     "ts-jest": "^26.1.0",
+    "ts-loader": "^8.0.8",
     "ts-node": "^8.10.2",
     "tslint": "^6.1.2",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.5",
+    "uglifyjs-webpack-plugin": "^2.2.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12"
   },
   "jest": {
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
     "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(ts?|tsx?|js?|jsx?)$",
-    "moduleFileExtensions": [ "ts","tsx", "js", "jsx", "json", "node" ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ],
     "collectCoverage": true
   }
 }
