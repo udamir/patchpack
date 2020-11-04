@@ -80,7 +80,7 @@ const pp2 = new PatchPack()
 <tr><td>
 
 ```ts
-// encode schema -------- send to client ---------->
+// encode schema -------- send to client --------->
 const encodedSchema = pp1.encodeSchema()
 
 console.log(encodedSchema.length)
@@ -105,7 +105,7 @@ console.log(pp2.decodeSchema(encodedSchema).types)
 <tr><td>
 
 ```ts
-// encode state snapshot ----- send to client ------>
+// encode state snapshot ----- send to client ----->
 const encodedSnaphot = pp1.encodeSnapshot(state)
 
 console.log(encodedSnaphot.length)
@@ -140,16 +140,16 @@ const client = { name: "FooBaz", info: "test" }
 state.clients["3"] = client
 
 // add nodes to schema
-const patches = pp1.schema.nodeFrom(client, "clients/3")
-console.log(patches[0])
+const [sp] = pp1.schema.nodeFrom(client, "clients/3")
+console.log(sp)
 // { 
 //   op: 'add', 
 //   path: '/nodes/8', 
 //   value: [ 8, 1, 1, '3' ] 
 // }
 
-// encode schema patch ------- send to client -------->
-const encodedPatch = pp.encodeSchemaPatch(patches[0])
+// encode schema patch ----- send to client ----->
+const encodedPatch = pp.encodeSchemaPatch(sp)
 console.log(encodedPatch.length) 
 // 10
 console.log(JSON.stringify(patches[0]).length)
@@ -179,7 +179,7 @@ const patch = {
   value: client 
 }
 
-// encode patch --------- send to client -------------->
+// encode patch ------- send to client --------->
 const encodedPatch = pp1.encodePatch(patch)
 console.log(encodedPatch.length)
 // 17
