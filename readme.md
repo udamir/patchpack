@@ -221,16 +221,16 @@ const patch = {
 
 // encode patch ------- send to client --------->
 const encodedPatch = pp.encodePatch(patch)
-console.log(encodedPatch2.length) 
+console.log(encodedPatch.length) 
 // 5
 
-console.log(JSON.stringify(patch2).length)
+console.log(JSON.stringify(patch).length)
 // 47
 ```
 </td><td>
   
 ```ts
-console.log(pp2.decodePatch(encodedPatch2))
+console.log(pp2.decodePatch(encodedPatch))
 // { 
 //   op: "replace", 
 //   path: "/foo/baz", 
