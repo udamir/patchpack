@@ -58,10 +58,12 @@ pp1.schema.addTypes({
 pp1.schema.buildFrom(state)
 ```
 </td><td>
-
+  
 ```ts
 // create patchpack instance on client side
 const pp2 = new PatchPack()
+
+
 
 
 
@@ -78,7 +80,7 @@ const pp2 = new PatchPack()
 <tr><td>
 
 ```ts
-// encode schema --------- send to client ---------------->
+// encode schema -------- send to client ---------->
 const encodedSchema = pp1.encodeSchema()
 
 console.log(encodedSchema.length)
@@ -103,13 +105,15 @@ console.log(pp2.decodeSchema(encodedSchema).types)
 <tr><td>
 
 ```ts
-// encode state snapshot --------- send to client ---------------->
+// encode state snapshot ----- send to client ------>
 const encodedSnaphot = pp1.encodeSnapshot(state)
 
 console.log(encodedSnaphot.length)
 // 44
+
 console.log(JSON.stringify(state).length)
 // 155
+
 
 ```
 </td><td>
@@ -117,8 +121,12 @@ console.log(JSON.stringify(state).length)
 ```ts
 console.log(pp2.decodeSnapshot(encodedSnaphot))
 // {
-//   clients: { '1': { name: 'Foo' }, '2': { name: 'Baz', info: 'FooBaz' } },
-//   objects: [ { id: 1, name: 'Foo' }, { id: 2, name: 'Foo', foo: 'Baz' } ],
+//   clients: { 
+//     '1': { name: 'Foo' }, 
+//     '2': { name: 'Baz', info: 'FooBaz' } },
+//   objects: [ 
+//     { id: 1, name: 'Foo' }, 
+//     { id: 2, name: 'Foo', foo: 'Baz' } ],
 //   foo: { baz: false }
 // }
 ```
@@ -132,22 +140,30 @@ const client = { name: "FooBaz", info: "test" }
 state.clients["3"] = client
 
 // add nodes to schema
-const schemaPatches = pp1.schema.nodeFrom(client, "clients/3")
-console.log(schemaPatches[0])
-// { op: 'add', path: '/nodes/8', value: [ 8, 1, 1, '3' ] }
+const patches = pp1.schema.nodeFrom(client, "clients/3")
+console.log(patches[0])
+// { 
+//   op: 'add', 
+//   path: '/nodes/8', 
+//   value: [ 8, 1, 1, '3' ] 
+// }
 
-// encode schema patch --------- send to client ---------------->
-const encodedSchemaPatch = pp.encodeSchemaPatch(schemaPatches[0])
-console.log(encodedSchemaPatch.length) 
+// encode schema patch ------- send to client -------->
+const encodedPatch = pp.encodeSchemaPatch(patches[0])
+console.log(encodedPatch.length) 
 // 10
-console.log(JSON.stringify(schemaPatches[0]).length)
+console.log(JSON.stringify(patches[0]).length)
 // 50
 ```
 </td><td>
 
 ```ts
 console.log(pp2.decodePatch(encodedSchemaPatch))
-// { op: 'add', path: '/nodes/8', value: [ 8, 1, 1, '3' ] }
+// { 
+//   op: 'add',
+//   path: '/nodes/8', 
+//   value: [ 8, 1, 1, '3' ]
+// }
 
 ```
 
@@ -157,9 +173,13 @@ console.log(pp2.decodePatch(encodedSchemaPatch))
 
 ```ts
 // state change patch
-const patch: IJsonPatch = { op: "add", path: "/clients/3", value: client }
+const patch = { 
+  op: "add", 
+  path: "/clients/3", 
+  value: client 
+}
 
-// encode patch --------- send to client ---------------->
+// encode patch --------- send to client -------------->
 const encodedPatch = pp1.encodePatch(patch)
 console.log(encodedPatch.length)
 // 17
@@ -175,6 +195,14 @@ console.log(pp2.decodePatch(encodedPatch))
 //   path: '/clients/3',
 //   value: { name: 'FooBaz', info: 'test' }
 // }
+
+
+
+
+
+
+
+
 ```
 </td></tr>
 </table>
