@@ -1,9 +1,9 @@
 {
   "name": "patchpack",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Json patch serializer",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "files": [
     "dist/*.js",
     "browser"

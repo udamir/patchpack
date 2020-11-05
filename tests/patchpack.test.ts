@@ -59,7 +59,7 @@ describe("Add new client to state", () => {
   const name = "Abc"
   test("should be equal encoder/decoder schema patches and encoder/decoder schema", () => {
 
-    const patch = serverSchema.addObjectNode (serverSchema.nodes.length, "Client", 1, id)
+    const patch = serverSchema.nodesAddObject (serverSchema.nodes.length, "Client", 1, id)
     const encoded = server.encodeSchemaPatch(patch)
     expect(client.decodePatch(encoded, true)).toEqual(patch)
 
@@ -88,7 +88,7 @@ describe("Delete client from state", () => {
   })
 
   test("should be equal encoder/decoder schema patches and encoder/decoder schema be equal schema", () => {
-    const patch = serverSchema.deleteNode(nodeId)!
+    const patch = serverSchema.nodesDelete(nodeId)!
     const encoded = server.encodeSchemaPatch(patch)
     expect(client.decodePatch(encoded, true)).toEqual(patch)
 

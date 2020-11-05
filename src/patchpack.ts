@@ -12,7 +12,7 @@ export class PatchPack {
     this.schema = new Schema(schema)
   }
 
-  public encodeSchema() {
+  public encodeSchema(): Buffer {
     return notepack.encode(this.schema)
   }
 
@@ -100,7 +100,7 @@ export class PatchPack {
     return notepack.encode(data)
   }
 
-  public decodeSchemaPatch(sp: SchemaPatch, prefix = ""): IJsonPatch {
+  public decodeSchemaPatch(sp: SchemaPatch): IJsonPatch {
     const patch = schemaPatch(sp)
 
     // set JsonPatch operation
@@ -110,7 +110,7 @@ export class PatchPack {
     const pathArr = [, patch.op < -3 ? "types" : "nodes", patch.id]
     if (patch.prop >= 0) { pathArr.push(patch.prop) }
 
-    const jsonPatch: IJsonPatch = { op, path: prefix + pathArr.join("/") }
+    const jsonPatch: IJsonPatch = { op, path: pathArr.join("/") }
 
     if (patch.values[0] !== undefined) {
       jsonPatch.value = patch.values[0]
@@ -152,23 +152,8 @@ export class PatchPack {
 
     if (encodedPatch[0] < 0) {
       // decode schemaMap patch
-      const decodedPatch = this.decodeSchemaPatch(encodedPatch, "")
-      if (updateSchema) {
-        const pathArr = decodedPatch.path.split("/")
-        const type = pathArr[1] as any
-        const index = +pathArr[2]
-        switch (decodedPatch.op) {
-          case "add":
-            return pathArr.length === 4
-              ? this.schema.addMapNodeKey(+pathArr[2], encodedPatch[3])
-              : this.schema.add(type, encodedPatch[3], index)
-          case "remove":
-            return this.schema.remove(type, index)
-          case "replace":
-            return this.schema.replace(type, index, encodedPatch[3])
-        }
-      }
-      return decodedPatch
+      const decodedPatch = this.decodeSchemaPatch(encodedPatch)
+      return updateSchema ? this.schema.applyPatch(decodedPatch) : decodedPatch
     }
 
     const [opIndex, entryId, propIndex, ...values] = encodedPatch
