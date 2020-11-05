@@ -15,8 +15,8 @@ npm install --save patchpack
 ## Browser
 A browser version of patchpack is also available:
 ```
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.0/browser/patchpack.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.0/browser/patchpack.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.1/browser/patchpack.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.1/browser/patchpack.js"></script>
 ```
 
 ## Example
@@ -142,7 +142,7 @@ const client = { name: "FooBaz", info: "test" }
 state.clients["3"] = client
 
 // add nodes to schema
-const [sp] = pp1.schema.nodeFrom(client, "clients/3")
+const [sp] = pp1.schema.addNodeFrom(client, "clients/3")
 console.log(sp)
 // { 
 //   op: 'add', 
