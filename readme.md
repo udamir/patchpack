@@ -15,8 +15,8 @@ npm install --save patchpack
 ## Browser
 A browser version of patchpack is also available:
 ```
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.0/browser/patchpack.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.0/browser/patchpack.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.1/browser/patchpack.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.2.1/browser/patchpack.js"></script>
 ```
 
 ## Example
@@ -107,7 +107,7 @@ console.log(pp2.decodeSchema(encodedSchema).types)
 <tr><td>
 
 ```ts
-// encode state snapshot ----- send to client ----->
+// encode state snapshot ---- send to client ---->
 const encodedSnaphot = pp1.encodeSnapshot(state)
 
 console.log(encodedSnaphot.length)
@@ -142,7 +142,8 @@ const client = { name: "FooBaz", info: "test" }
 state.clients["3"] = client
 
 // add nodes to schema
-const [sp] = pp1.schema.nodeFrom(client, "clients/3")
+const [sp] = pp1.schema
+  .addNodeFrom(client, "clients/3")
 console.log(sp)
 // { 
 //   op: 'add', 
@@ -150,7 +151,7 @@ console.log(sp)
 //   value: [ 8, 1, 1, '3' ] 
 // }
 
-// encode schema patch ----- send to client ----->
+// encode schema patch ----- send to client --->
 const encodedPatch = pp.encodeSchemaPatch(sp)
 console.log(encodedPatch.length) 
 // 10
@@ -181,7 +182,7 @@ const patch = {
   value: client 
 }
 
-// encode patch ------- send to client --------->
+// encode patch ------ send to client ----->
 const encodedPatch = pp1.encodePatch(patch)
 console.log(encodedPatch.length)
 // 17
@@ -221,7 +222,7 @@ const patch = {
   value: true 
 }
 
-// encode patch ------- send to client --------->
+// encode patch ----- send to client ----->
 const encodedPatch = pp.encodePatch(patch)
 console.log(encodedPatch.length) 
 // 5
