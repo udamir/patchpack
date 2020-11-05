@@ -154,13 +154,13 @@ console.log(sp)
 const encodedPatch = pp.encodeSchemaPatch(sp)
 console.log(encodedPatch.length) 
 // 10
-console.log(JSON.stringify(patches[0]).length)
+console.log(JSON.stringify(encodedPatch).length)
 // 50
 ```
 </td><td>
 
 ```ts
-console.log(pp2.decodePatch(encodedSchemaPatch))
+console.log(pp2.decodePatch(encodedPatch))
 // { 
 //   op: 'add',
 //   path: '/nodes/8', 
