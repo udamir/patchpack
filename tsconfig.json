@@ -69,5 +69,5 @@
   "include": [
     "./src/**/*", "./temp/**/*"
   ],
-  "exclude": ["node_modules", "dist", "**/*.d.ts", "./tests/**/*" ]
+  "exclude": ["node_modules", "dist", "./tests/**/*" ]
 }
