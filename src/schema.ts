@@ -6,11 +6,15 @@ import {
 export class Schema {
   public types: SchemaType[]
   public nodes: SchemaNode[]
-  public nextId: number = 0
+  private _nextId: number = 0
 
   constructor (schema?: ISchema) {
     this.types = schema && schema.types || []
     this.nodes = schema && schema.nodes || []
+  }
+
+  get nextId() {
+    return this._nextId++
   }
 
   public applyPatch(patch: IJsonPatch): IJsonPatch {
@@ -31,8 +35,14 @@ export class Schema {
 
   public buildFrom(value: any): IJsonPatch[] {
     this.nodes.length = 0
-    this.nextId = 0
+    this._nextId = 0
     return this.createNode(value, { parentId: -1, key: -1 })
+  }
+
+  public updateFrom(patch: IJsonPatch): IJsonPatch[] {
+    return patch.op === "remove"
+     ? [this.deleteNode(patch.path)]
+     : this.addNodeFrom(patch.value, patch.path)
   }
 
   public addNodeFrom(value: any, path: string): IJsonPatch[] {
@@ -111,7 +121,7 @@ export class Schema {
     return { op: "add", path: `/nodes/${index}/${node.length - 1}`, value: key }
   }
 
-  public nodesDelete(nodeId: number, deleteChildren = false): IJsonPatch {
+  public nodesDelete(nodeId: number, deleteChildren = true): IJsonPatch {
     const index = this.nodes.findIndex((n) => n[0] === nodeId)
     check(index < 0, `Cannot delete node to schema - node with id ${nodeId} not exists!`)
 
@@ -215,34 +225,48 @@ export class Schema {
 
   private createNode(value: any, meta: any): IJsonPatch[] {
     const { parentId, key } = meta
+    const parent = this.getNode(parentId)!
+    const oldNode = this.getChildNode(parent, key)
+
+    if (oldNode) {
+      // delete old node with child nodes
+      this.nodesDelete(oldNode.id)
+    }
+
     const patches: IJsonPatch[] = []
     if (Array.isArray(value)) {
-      const nodeId = this.nextId++
-      patches.push(this.nodesAddArray(nodeId, parentId, key))
+      const nodeId = oldNode ? oldNode.id : this.nextId
+
+      const patch = this.nodesAddArray(nodeId, parentId, key)
+      if (oldNode) { patch.op = "replace" }
+
+      patches.push(patch)
       value.forEach((item, i) => {
         patches.push(...this.createNode(item, { parentId: nodeId, key: i }))
       })
     } else if (typeof value === "object") {
-      const nodeId = this.nextId++
+      const nodeId = oldNode ? oldNode.id : this.nextId
       const type = this.findType(Object.keys(value))
-      if (!type) {
-        patches.push(this.nodesAddMap(nodeId, parentId, key))
-      } else {
-        patches.push(this.nodesAddObject(nodeId, type, parentId, key))
-      }
+
+      const patch = !type
+        ? this.nodesAddMap(nodeId, parentId, key)
+        : this.nodesAddObject(nodeId, type, parentId, key)
+      if (oldNode) { patch.op = "replace" }
+
+      patches.push(patch)
       Object.keys(value).forEach((childKey) => {
         patches.push(...this.createNode(value[childKey], { parentId: nodeId, key: childKey }))
       })
     } else {
-      const parent = this.getNode(parentId)!
-      const path = this.getNodePath(parent)
       if (typeof value === "function" || typeof value === "symbol") {
+        const path = this.getNodePath(parent)
         throw new Error (`Cannot build schema - wrong value on path ${path}/${key}`)
       }
-      if (parent.type === NODE_MAP_TYPE) {
+      if (oldNode) {
+        patches.push(this.nodesDelete(oldNode.id, false))
+      } else if (parent.type === NODE_MAP_TYPE) {
         patches.push(this.nodesAddMapKey(parentId, key)!)
       }
-      return []
     }
     return patches
   }
