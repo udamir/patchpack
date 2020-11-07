@@ -1,16 +1,16 @@
 import {
-  NODE_MAP_TYPE, NODE_ARRAY_TYPE, ISchema, SchemaNode,
-  ISchemaNode, schemaType, schemaNode, SchemaType, IJsonPatch, check
+  NODE_MAP_TYPE, NODE_ARRAY_TYPE, TSchemaNode, SchemaNode,
+  TSchemaType, IJsonPatch, check
 } from "./common"
 
 export class Schema {
-  public types: SchemaType[]
-  public nodes: SchemaNode[]
+  public types: TSchemaType[]
+  public nodes: TSchemaNode[]
   private _nextId: number = 0
 
-  constructor (schema?: ISchema) {
-    this.types = schema && schema.types || []
-    this.nodes = schema && schema.nodes || []
+  constructor (types?: TSchemaType[], nodes?: TSchemaNode[]) {
+    this.types = types || []
+    this.nodes = nodes || []
   }
 
   get nextId() {
@@ -36,7 +36,7 @@ export class Schema {
   public buildFrom(value: any): IJsonPatch[] {
     this.nodes.length = 0
     this._nextId = 0
-    return this.createNode(value, { parentId: -1, key: -1 })
+    return this.createNode(value, { key: -1 })
   }
 
   public updateFrom(patch: IJsonPatch): IJsonPatch[] {
@@ -46,27 +46,27 @@ export class Schema {
   }
 
   public addNodeFrom(value: any, path: string): IJsonPatch[] {
+    path = path[0] === "/" ? path.slice(1) : path
     const pathArr = path.split("/").reverse()
-    const key = pathArr[0]
-    let node = schemaNode(this.nodes[0])
+    let node = this.findNode({ parent: -1 })!
+
     while (pathArr.length > 1) {
       node = this.getChildNode(node, pathArr.pop()!)!
-      if (!node) {
-        throw new Error(`Cannot add new node - wrong path: ${path}`)
-      }
+      check (!node,`Cannot add new node - wrong path: ${path}`)
     }
-    return this.createNode(value, { parentId: node.id, key })
+    return this.createNode(value, { parent: node, key: pathArr[0] })
   }
 
   public deleteNode(path: string): IJsonPatch {
+    path = path[0] === "/" ? path.slice(1) : path
     const pathArr = path.split("/").reverse()
-    if (pathArr[pathArr.length - 1] === "") { pathArr.pop() }
-    let node = schemaNode(this.nodes[0])
+
+    let node = this.findNode({ parent: -1 })!
+    check(!node, `Cannot delet node - no nodes in schema!`)
+
     while (pathArr.length) {
       node = this.getChildNode(node, pathArr.pop()!)!
-      if (!node) {
-        throw new Error(`Cannot add delete node - wrong path: ${path}`)
-      }
+      check(!node, `Cannot delete node - wrong path: ${path}`)
     }
     return this.nodesDelete(node.id)
   }
@@ -104,7 +104,7 @@ export class Schema {
     check(!parent && parentId >= 0, `Cannot add node to schema - parent with id ${parentId} not found!`)
 
     const index = typeof name === "string" && (!parent || parent.type !== NODE_MAP_TYPE)
-      ? this.getNodeIndex(parentId, name) : name
+      ? this.getNodeIndex(parent, name) : name
     check(index === -1 && this.nodes.length, `Cannot add node to schema - key/index "${name}" not exist!`)
 
     return this.add("nodes", [ nodeId, type, parentId, index, ...keys ])
@@ -131,10 +131,10 @@ export class Schema {
     }
 
     // update nodes array index
-    const node = schemaNode(this.nodes[index])
+    const node = new SchemaNode(this.nodes[index], index)
     const parent = this.getNode(node.parent)
     if (parent && parent.type === NODE_ARRAY_TYPE) {
-      this.nodes.filter((n) => n[2] === parent.id && n[3] > node.index).forEach((n: SchemaNode) => n[3] = +n[3] - 1)
+      this.nodes.filter((n) => n[2] === parent.id && n[3] > node.index).forEach((n: TSchemaNode) => n[3] = +n[3] - 1)
     }
 
     return this.remove("nodes", index)
@@ -145,8 +145,8 @@ export class Schema {
     return type ? type.slice(1) : []
   }
 
-  public getNodeName(sn: SchemaNode | ISchemaNode): string | number {
-    const node = Array.isArray(sn) ? schemaNode(sn) : sn
+  public getNodeName(sn: SchemaNode): string | number {
+    const node = sn
     const parent = this.getNode(node.parent)
     if (!parent) {
       return ""
@@ -155,13 +155,12 @@ export class Schema {
     } else if (parent.type === NODE_MAP_TYPE) {
       return parent.items[node.index]
     } else {
-      const { props } = schemaType(this.types[parent.type])
+      const props = this.types[parent.type].slice(1)
       return props[node.index]
     }
   }
 
-  public getNodeIndex(parentId: number, name: string): number {
-    const parent = this.getNode(parentId)
+  public getNodeIndex(parent: SchemaNode, name: string): number {
     if (!parent) {
       return -1
     } else if (parent.type === NODE_MAP_TYPE) {
@@ -174,13 +173,13 @@ export class Schema {
     }
   }
 
-  public getNode(nodeId: number): ISchemaNode | undefined {
-    const node = this.nodes.find((n) => n[0] === nodeId)
-    return node && schemaNode(node)
+  public getNode(nodeId: number): SchemaNode | undefined {
+    const index = this.nodes.findIndex((n) => n[0] === nodeId)
+    return index >= 0 ? new SchemaNode(this.nodes[index], index) : undefined
   }
 
-  public getNodePath(sn: SchemaNode | ISchemaNode): string {
-    let node = Array.isArray(sn) ? schemaNode(sn) : sn
+  public getNodePath(sn: SchemaNode): string {
+    let node = sn
     const pathArr = []
     while (!!node) {
       pathArr.push(this.getNodeName(node))
@@ -189,27 +188,25 @@ export class Schema {
     return pathArr.reverse().join("/")
   }
 
-  public getChildNode(sn: SchemaNode | ISchemaNode | undefined, name: string | number): ISchemaNode | undefined {
-    if (!sn) {
-      return this.findNode({ parent: -1 })
-    }
-    const node = Array.isArray(sn) ? schemaNode(sn) : sn
+  public getChildNode(sn: SchemaNode | undefined, name: string | number): SchemaNode | undefined {
+    if (!sn) { return this.findNode({ parent: -1 }) }
+    const node = sn
     if (node.type === NODE_ARRAY_TYPE) {
       return this.findNode({ parent: node.id, index: +name })
     } else if (node.type === NODE_MAP_TYPE) {
       return this.findNode({ parent: node.id, index: node.items.indexOf(name as string) })
     } else {
-      const { props } = schemaType(this.types[node.type])
+      const props = this.types[node.type].slice(1)
       return this.findNode({ parent: node.id, index: props.indexOf(name as string) })
     }
   }
 
-  public findNode(query: { [key: string]: any }): ISchemaNode | undefined {
-    const sn = this.nodes.find((n) => {
-      const node = schemaNode(n) as any
+  public findNode(query: { [key: string]: any }): SchemaNode | undefined {
+    const index = this.nodes.findIndex((n, i) => {
+      const node = new SchemaNode(n, i) as any
       return !Object.keys(query).find((key) => node[key] !== query[key])
     })
-    return sn && schemaNode(sn)
+    return index >=0 ? new SchemaNode(this.nodes[index], index) : undefined
   }
 
 
@@ -223,10 +220,11 @@ export class Schema {
     return type ? type[0] : null
   }
 
-  private createNode(value: any, meta: any): IJsonPatch[] {
-    const { parentId, key } = meta
-    const parent = this.getNode(parentId)!
+  public createNode(value: any, meta: any): IJsonPatch[] {
+    const { parent, key } = meta
+    const parentId = parent ? parent.id : -1
     const oldNode = this.getChildNode(parent, key)
+    const nodeIndex = this.nodes.length
 
     if (oldNode) {
       // delete old node with child nodes
@@ -239,10 +237,11 @@ export class Schema {
 
       const patch = this.nodesAddArray(nodeId, parentId, key)
       if (oldNode) { patch.op = "replace" }
+      const node = new SchemaNode(this.nodes[nodeIndex], nodeIndex)
 
       patches.push(patch)
       value.forEach((item, i) => {
-        patches.push(...this.createNode(item, { parentId: nodeId, key: i }))
+        patches.push(...this.createNode(item, { parent: node, key: i }))
       })
     } else if (typeof value === "object") {
       const nodeId = oldNode ? oldNode.id : this.nextId
@@ -252,10 +251,11 @@ export class Schema {
         ? this.nodesAddMap(nodeId, parentId, key)
         : this.nodesAddObject(nodeId, type, parentId, key)
       if (oldNode) { patch.op = "replace" }
+      const node = new SchemaNode(this.nodes[nodeIndex], nodeIndex)
 
       patches.push(patch)
       Object.keys(value).forEach((childKey) => {
-        patches.push(...this.createNode(value[childKey], { parentId: nodeId, key: childKey }))
+        patches.push(...this.createNode(value[childKey], { parent: node, key: childKey }))
       })
     } else {
       if (typeof value === "function" || typeof value === "symbol") {
@@ -271,7 +271,8 @@ export class Schema {
     return patches
   }
 
-  private add(type: "types" | "nodes", value: SchemaType | SchemaNode, index: number = this[type].length): IJsonPatch {
+  private add(type: "types" | "nodes", value: TSchemaType | TSchemaNode, index?: number): IJsonPatch {
+    index = index === undefined ? this[type].length : index
     const patch: IJsonPatch = { op: "add", path: `/${type}/${index}`, value: [ ...value ] }
     if (type === "nodes" && typeof value[3] === "string") {
       // value[3] is map key => need to add key to parent map
@@ -282,7 +283,7 @@ export class Schema {
         // add key to map node
         this.nodesAddMapKey(parent.id, value[3])
         // put key index in value[3]
-        value[3] = parent.items.length
+        value[3] = parent.items.length - 1
       } else {
         // put key index in value[3]
         value[3] = keyIndex
@@ -293,7 +294,7 @@ export class Schema {
     return patch
   }
 
-  private replace(type: "types" | "nodes", index: number, value: SchemaType | SchemaNode): IJsonPatch {
+  private replace(type: "types" | "nodes", index: number, value: TSchemaType | TSchemaNode): IJsonPatch {
     this[type][index] = value
     return { op: "replace", path: `/${type}/${index}`, value, }
   }

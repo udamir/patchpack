@@ -14,59 +14,28 @@ export interface IReversibleJsonPatch extends IJsonPatch {
 }
 
 export interface ISchema {
-  types: SchemaType[]
-  nodes: SchemaNode[]
+  types: TSchemaType[]
+  nodes: TSchemaNode[]
 }
 
-//   SchemaType = [ name,   props    ]
-export type SchemaType = [ string, ...string[] ]
+//          TSchemaType = [ name,   props    ]
+export type TSchemaType = [ string, ...string[] ]
 
-export interface ISchemaType {
-  name: string
-  props: string[]
+//          TSchemaNode = [ id,     type,   parent, index,           map keys    ]
+export type TSchemaNode = [ number, number, number, number | string, ...string[] ]
+
+export class SchemaNode {
+  constructor(public nodeRef: TSchemaNode, public nodeIndex: number) {}
+
+  public get id() { return this.nodeRef[0] }
+  public get type() { return this.nodeRef[1] }
+  public get parent() { return this.nodeRef[2] }
+  public get index() { return this.nodeRef[3] as number }
+  public get items() { return this.nodeRef.slice(4) as string[] }
 }
 
-export const schemaType = (type: SchemaType = [] as any): ISchemaType => ({
-  name: type[0],
-  props: type.slice(1),
-})
-
-export type SchemaNode = [ number, number, number, number | string, ...string[] ]
-
-export interface ISchemaNode {
-  id: number
-  type: number
-  parent: number
-  index: number
-  items: string[]
-  ref: SchemaNode
-}
-
-export const schemaNode = (node: SchemaNode = [] as any): ISchemaNode => ({
-  id: node[0],
-  type: node[1],
-  parent: node[2],
-  index: node[3] as number,
-  items: node.slice(4) as string[],
-  ref: node
-})
-
-//   SchemaPatch = [ op,     id,     prop,   value/oldValue ]
-export type SchemaPatch = [ number, number, number, any?, any? ]
-
-export interface ISchemaPatch {
-  op: number
-  id: number
-  prop: number
-  values: any[]
-}
-
-export const schemaPatch = (patch: SchemaPatch = [] as any): ISchemaPatch => ({
-  op: patch[0],
-  id: patch[1],
-  prop: patch[2],
-  values: patch.slice(3),
-})
+//          TSchemaPatch = [ op,     id,     prop,   value/oldValue ]
+export type TSchemaPatch = [ number, number, number, any?, any? ]
 
 export const check = (condition: any, error: string) => {
   if (condition) {
