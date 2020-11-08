@@ -1,10 +1,18 @@
 import * as notepack from "notepack.io"
 
 import {
-  ISchema, TSchemaPatch, IJsonPatch, IReversibleJsonPatch,
-  NODE_ARRAY_TYPE, NODE_MAP_TYPE, check, SchemaNode
+  TSchemaPatch, IJsonPatch, IReversibleJsonPatch,
+  ARRAY_NODE, MAP_NODE, check, ISchemaNode, OP_REPLACE, OP_REMOVE, OP_ADD
 } from "./common"
 import { Schema } from "./schema"
+
+interface IBuildMeta {
+  parent?: ISchemaNode
+  key: number | string
+  patches?: IJsonPatch[] | null
+  op?: 0 | 1 | 2 | -1
+}
+
 
 export class PatchPack {
   public schema: Schema
@@ -47,86 +55,122 @@ export class PatchPack {
     return jsonPatch
   }
 
-  private encodeNode(snapshot: any, sn?: SchemaNode, name?: string | number): any[] {
+  public unpackPatch(sp: TSchemaPatch): IJsonPatch {
+    const [opIndex, nodeId, propIndex, ...values] = sp
 
-    const node = this.schema.getChildNode(sn, name === undefined ? "" : name)
-    if (!node || !snapshot) { return snapshot }
+    const node = this.schema.getNode(nodeId)!
+    check (!node, `Cannot decode patch - schema for node with id ${nodeId} not found`)
 
-    if (node.type === NODE_MAP_TYPE) {
-      check (typeof snapshot !== "object", `Cannot encode snapshot - object expected on path: ${ this.schema.getNodePath(node) }`)
+    const key = typeof node.type === "object" ? node.type.props[propIndex] || "" : ""
+    const path = this.schema.getNodePath(node, key)
 
-      return node.items.map((key: string, i) => this.encodeNode(snapshot[key], node, key))
-    } else if (node.type === NODE_ARRAY_TYPE) {
-      check (!Array.isArray(snapshot), `Cannot encode snapshot - array expected on path: ${ this.schema.getNodePath(node) }`)
+    const patch: any = { op: ["add", "replace", "remove"][opIndex], path }
+    const prop = node.items.find((n) => n.index = propIndex)
 
-      return snapshot.map((item: any, i: number) => this.encodeNode(item, node, i))
+    if (values.length && patch.op !== "remove") {
+      patch.value = this.decodeNode(values.reverse().pop(), prop || node)
+    }
+
+    if (values.length && patch.op !== "add") {
+      patch.oldValue = this.decodeNode(values.pop(), prop || node)
+    }
+
+    if (values.length) {
+      throw new Error(`Unhandled params: ${values.toString()}`)
+    }
+
+    return patch
+  }
+
+  public encodeNode(value: any, meta: IBuildMeta): any {
+    const { parent, key, patches = null, op = 0 } = meta
+    let node = parent && this.schema.getChildNode(parent, key)!
+
+    if (node && (op === OP_REPLACE || op === OP_REMOVE)) {
+      // delete old node with child nodes
+      // this.nodesDelete(node.id)
+    }
+
+    if (op !== OP_ADD) {
+      check(!node , ` -  array expected on path: ${ this.schema.getNodePath(parent, key) }`)
+      check(node!.type !== ARRAY_NODE, ` -  array expected on path: ${ this.schema.getNodePath(parent, key) }`)
+    }
+
+    if (Array.isArray(value)) {
+      if (op === OP_ADD) {
+        node = this.schema.createNode(this.schema.nextId, parent, ARRAY_NODE, key, patches)
+      }
+      return value.map((item, i) => this.encodeNode(item, { parent: node, key: i, patches, op }))
+    } else if (typeof value === "object") {
+      if (op === OP_ADD) {
+        const type = this.schema.findType(value) || MAP_NODE
+        node = this.schema.createNode(this.schema.nextId, parent, type, key, patches)
+      }
+      return Object.keys(value).map((k) => this.encodeNode(value[k], { parent: node, key: k, patches, op }))
     } else {
-      const props = this.schema.getTypeProps(node.type)
-      return props.map((key, i) => this.encodeNode(snapshot[key], node, key))
+      check (typeof value === "function" || typeof value === "symbol",
+        `Cannot build schema - wrong value on path ${ this.schema.getNodePath(parent, key) }`)
+      if (node) {
+        // TODO: delete node
+      } else if (op === OP_ADD && parent && parent.type === MAP_NODE) {
+        parent.keys!.push(key as string)
+      }
+      return value
     }
   }
 
+
   public encodeState(value: any, addSchema = true): Buffer {
-    // build schema of encode nodes
-    if (!this.schema.nodes.length) {
-      // build schema, encode it with snapshot
-      this.schema.buildFrom(value)
-    }
+
+    const encoded = this.encodeNode(value, { key: "", patches: null, op: 0 })
 
     // encode snapshot nodes and schema
-    const snapshot = [ this.encodeNode(value), ...addSchema ? [this.schema.types, this.schema.nodes] : [] ]
+    const snapshot = [ encoded, ...addSchema ? [this.schema.types, this.schema.nodes] : [] ]
 
     // return packed snapshot
     return notepack.encode(snapshot)
   }
 
-  public decodeState<T = any>(buffer: Buffer): T {
+  public decodeState<T = any>(buffer: Buffer) {
     const [encodedNode, types, nodes] = notepack.decode(buffer)
 
     // apply schema
     if (types && nodes) {
-      this.schema.types = types
-      this.schema.nodes = nodes
+      this.schema.apply(types, nodes)
     }
 
     // decode snapshot
-    return this.decodeNode(0, encodedNode)
+    return this.decodeNode(encodedNode, this.schema.root)
   }
 
   public encodePatch (patch: IReversibleJsonPatch): Buffer {
     const path = patch.path[0] === "/" ? patch.path.slice(1) : patch.path
-    const pathArr = path.split("/")
+    const pathArr = path.split("/").reverse()
+    const key = pathArr.splice(0,1)[0]
 
-    let node = this.schema.findNode({ parent: -1 })
-    check (!node,`Cannot encode patch, you need to build schema first!`)
+    let parent: ISchemaNode = this.schema.root!
+    check (!parent,`Cannot encode patch, you need to build schema first!`)
 
-    const pathNodes: Array<SchemaNode | undefined> = [node]
-    let i = -1
-    while (++i < pathArr.length) {
-      node = this.schema.getChildNode(node, pathArr[i])
-      check(!node && i < pathArr.length - 1, `Cannot add new node - wrong path: ${patch.path}`)
-      node && pathNodes.push(node)
+    while (pathArr.length) {
+      parent = this.schema.getChildNode(parent, pathArr.pop()!)!
+      check(!parent, `Cannot add new node - wrong path: ${patch.path}`)
     }
 
-    const key = pathNodes.length === pathArr.length && pathArr.pop() || undefined
-    const parent = pathNodes.pop()!
-    const patches = patch.op === "remove"
-      ? [ this.schema.deleteNode(patch.path) ]
-      : this.schema.createNode(patch.value, { parent, key })
+    const patches: IJsonPatch[] = []
+    const op = ["add", "replace", "remove"].indexOf(patch.op) as any
+    const value = patch.op !== "remove" && this.encodeNode(patch.value, { parent, key, patches, op })
+    const oldValue = patch.op !== "remove" && this.encodeNode(patch.oldValue, { parent, key, patches })
 
-    node = (patch.op !== "remove" && key !== undefined) && this.schema.getChildNode(parent, key) || parent
+    const node = this.schema.getChildNode(parent, key)!
+    check(!node, "Cannot encode patch - node not found!")
 
-    const op = ["add", "replace", "remove"].indexOf(patch.op)
-    const props = this.schema.getTypeProps(node.type)
-    const propIndex = key === undefined ? -1 : props.indexOf(key)
-
-    const data: TSchemaPatch = [ op, node.id, propIndex ]
+    const data: TSchemaPatch = [ op, node.id, node.index ]
 
     if (patch.op !== "remove") {
-      data.push(this.encodeNode(patch.value, parent, key))
+      data.push(value)
     }
     if (patch.op !== "add" && "oldValue" in patch) {
-      data.push(this.encodeNode(patch.oldValue, parent, key))
+      data.push(oldValue)
     }
 
     const result = patches.map((p) => {
@@ -143,21 +187,21 @@ export class PatchPack {
     return notepack.encode(result)
   }
 
-  private decodeNode (nodeId: any, encoded: any[]): any {
-    const node = this.schema.getNode(nodeId)
+  private decodeNode (encoded: any[], node?: ISchemaNode): any {
+
     if (!node || !encoded) { return encoded }
 
-    if (node.type === NODE_ARRAY_TYPE) {
+    if (node.type === ARRAY_NODE) {
       return encoded.map((item, i) => {
         const itemNode = this.schema.getChildNode(node, i)
-        return this.decodeNode(itemNode ? itemNode.id : -1, item)
+        return this.decodeNode(item, itemNode)
       })
     } else {
       const result: any = {}
-      const keys = node.type === NODE_MAP_TYPE ? node.items : this.schema.getTypeProps(node.type)
+      const keys = node.type === MAP_NODE ? node.keys! : node.type.props
       keys.forEach((key: string, i: number) => {
         const itemNode = this.schema.getChildNode(node, key)
-        const value = this.decodeNode(itemNode ? itemNode.id : -1, encoded[i])
+        const value = this.decodeNode(encoded[i], itemNode)
         if (value === undefined) { return }
         result[key] = value
       })
@@ -178,34 +222,6 @@ export class PatchPack {
       this.schema.applyPatch(this.unpackSchemaPatch(p))
     })
 
-    const [opIndex, entryId, propIndex, ...values] = encodedPatch
-
-    const node = this.schema.getNode(entryId)!
-    check (!node, `Cannot decode patch - schema for node with id ${entryId} not found`)
-
-    const path = this.schema.getNodePath(node)
-    const props = this.schema.getTypeProps(node.type)
-
-    const patch: any = {
-      op: ["add", "replace", "remove"][opIndex],
-      path: path + (propIndex >= 0 ? "/" + props[propIndex] : "")
-    }
-
-    const child = this.schema.findNode({ parent: entryId, index: propIndex })
-    const nodeId = child ? child.id : propIndex < 0 && entryId || -1
-
-    if (values.length && patch.op !== "remove") {
-      patch.value = this.decodeNode(nodeId, values.reverse().pop())
-    }
-
-    if (values.length && patch.op !== "add") {
-      patch.oldValue = this.decodeNode(nodeId, values.pop())
-    }
-
-    if (values.length) {
-      throw new Error(`Unhandled params: ${values.toString()}`)
-    }
-
-    return patch
+    return this.unpackPatch(encodedPatch)
   }
 }
