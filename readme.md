@@ -88,6 +88,10 @@ console.log(encodedPatch2.length)
 console.log(JSON.stringify(patch2).length)
 // 47
 
+// send encodedState, encodedPatch1 and encodedPatch2 to Clinet -->>
+```
+
+```ts
 /** Client side */
 
 // create patchpack instance on client side
@@ -116,7 +120,6 @@ const decodedPatch2 = ppClient.decodePatch(encodedPatch2)
 console.log(decodedPatch2)
 
 // { op: 'replace', path: '/foo/baz', value: true }
-  
 ```
 
 ## License
