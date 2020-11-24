@@ -21,8 +21,8 @@ export interface ISchema {
 //          TSchemaType = [ name,   props    ]
 export type TSchemaType = [ string, ...string[] ]
 
-//          TSchemaNode = [ id,     type,   parent, index,          ]
-export type TSchemaNode = [ number, number, number, number | string ]
+//          TSchemaNode = [ id,     type,   parent, index         ]
+export type TSchemaNode = [ number, number, number, number ]
 
 //          TSchemaPatch = [ op,     id,     prop,   value/oldValue ]
 export type TSchemaPatch = [ number, number, number, any?, any? ]
