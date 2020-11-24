@@ -13,16 +13,8 @@ export interface IReversibleJsonPatch extends IJsonPatch {
   oldValue?: any
 }
 
-export interface ISchema {
-  types: TSchemaType[]
-  nodes: TSchemaNode[]
-}
-
 //          TSchemaType = [ name,   props    ]
 export type TSchemaType = [ string, ...string[] ]
-
-//          TSchemaNode = [ id,     type,   parent, index         ]
-export type TSchemaNode = [ number, number, number, number ]
 
 //          TSchemaPatch = [ op,     id,     prop,   value/oldValue ]
 export type TSchemaPatch = [ number, number, number, any?, any? ]

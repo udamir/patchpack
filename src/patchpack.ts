@@ -12,8 +12,7 @@ interface IBuildMeta {
 export class PatchPack {
   public schema: Schema
   constructor (types?: { [type: string]: string[] }) {
-    this.schema = new Schema()
-    this.schema.addTypes(types || {})
+    this.schema = new Schema(types)
   }
 
   public encodeState(value: any, addTypes = true): Buffer {

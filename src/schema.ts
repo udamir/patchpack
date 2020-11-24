@@ -1,13 +1,12 @@
-import { MAP_NODE, ARRAY_NODE, TSchemaType, check, ISchemaType, ISchemaNode, NodeType } from "./common"
+import { MAP_NODE, ARRAY_NODE, ISchemaType, ISchemaNode, NodeType, TSchemaType } from "./common"
 
 export class Schema {
-  private _types: ISchemaType[]
-  private _nodes: ISchemaNode[]
+  private _types!: ISchemaType[]
+  private _nodes!: ISchemaNode[]
   private _nextId: number = 0
 
-  constructor () {
-    this._nodes = []
-    this._types = []
+  constructor (types: { [type: string]: string[] } = {}) {
+    this.init(Object.keys(types).map((name) => [ name, ...types[name] ]))
   }
 
   public get types(): TSchemaType[] {
@@ -26,19 +25,8 @@ export class Schema {
     this._types = []
     this._nodes = []
 
-    types.forEach(([name, ...props]) => this.addType(name, props))
+    types.forEach(([name, ...props]) => this._types.push({ name, props, index: this._types.length }))
   }
-
-  public addType(name: string, props: string[]) {
-    check(this.types.find((n) => n[0] === name), `Cannot add type to schema - type ${name} already exists!`)
-    this._types.push({ name, props, index: this._types.length })
-    // return this.add("types", [name, ...props])
-  }
-
-  public addTypes(types: { [type: string]: string[] }) {
-    Object.keys(types).map((key) => this.addType(key, types[key]))
-  }
-
   public getNode(nodeId: number): ISchemaNode | undefined {
     return this._nodes.find((n) => n.id === nodeId)
   }
