@@ -82,7 +82,7 @@ state.foo.baz = true
 // generate patch2
 const patch2 = { op: "replace", path: "/foo/baz", value: true }
 const encodedPatch2 = ppServer.encodePatch(patch2)
-console.log(encodedPatch2)
+console.log(encodedPatch2.length)
 // 5
 
 console.log(JSON.stringify(patch2).length)
