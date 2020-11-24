@@ -7,6 +7,7 @@ interface IBuildMeta {
   parent?: ISchemaNode
   key: number | string
   index: number
+  updateSchema?: boolean
 }
 
 export class PatchPack {
@@ -15,12 +16,12 @@ export class PatchPack {
     this.schema = new Schema(types)
   }
 
-  public encodeState(value: any, addTypes = true): Buffer {
+  public encodeState(value: any, includeTypes = true, updateSchema = true): Buffer {
     // encode root node
-    const encoded = this.encodeNode(value, { key: "", index: -1 })
+    const encoded = this.encodeNode(value, { key: "", index: -1, updateSchema })
 
     // encode snapshot nodes and schema
-    const snapshot = [ encoded, ...addTypes ? [this.schema.types] : [] ]
+    const snapshot = [ encoded, ...includeTypes ? [this.schema.types] : [] ]
 
     // return packed snapshot
     return notepack.encode(snapshot)
@@ -37,7 +38,7 @@ export class PatchPack {
   }
 
   private encodeNode(value: any, meta: IBuildMeta): any {
-    const { parent, key = "", index = -1 } = meta
+    const { parent, key = "", index = -1, updateSchema = true } = meta
 
     // add key to map schema keys
     if (parent && parent.type === MAP_NODE) {
@@ -57,7 +58,7 @@ export class PatchPack {
       data.push(ARRAY_NODE, node.id)
       // set encoded node items
       for(let i = 0; i < value.length; i++) {
-        data.push(this.encodeNode(value[i], { parent: node, key: i, index: i }))
+        data.push(this.encodeNode(value[i], { parent: node, key: i, index: i, updateSchema }))
       }
 
     } else if (typeof value === "object" && value) {
@@ -66,25 +67,26 @@ export class PatchPack {
       const type = this.schema.findType(value) || MAP_NODE
 
       // create schema node
-      node = node || this.schema.createNode(this.schema.nextId, parent, type, key, index)
+      node = node || updateSchema && this.schema.createNode(this.schema.nextId, parent, type, key, index)
+      check(!node, `Cannot encode value - node not found on path: ${this.schema.getNodePath(parent, key)}`)
 
       data.push(type !== MAP_NODE ? type.index : MAP_NODE, node.id)
 
       if (type !== MAP_NODE) {
         // set encoded props
         Object.keys(value).forEach((k) => {
-          data.push(this.encodeNode(value[k], { parent: node, key: k, index: type.props.indexOf(k) }))
+          data.push(this.encodeNode(value[k], { parent: node, key: k, index: type.props.indexOf(k), updateSchema }))
         })
       } else {
         // set map items
         Object.keys(value).forEach((k, i) => {
-          data.push(k, this.encodeNode(value[k], { parent: node, key: k, index: i }))
+          data.push(k, this.encodeNode(value[k], { parent: node, key: k, index: i, updateSchema }))
         })
       }
     } else {
       // check type
       check (typeof value === "function" || typeof value === "symbol",
-        `Cannot build schema - wrong value on path ${ this.schema.getNodePath(parent, key) }`)
+        `Cannot encode value - wrong value on path ${ this.schema.getNodePath(parent, key) }`)
 
       return value
     }
@@ -137,7 +139,7 @@ export class PatchPack {
     return result
   }
 
-  public encodePatch(patch: IReversibleJsonPatch): Buffer {
+  public encodePatch(patch: IReversibleJsonPatch, updateSchema = true): Buffer {
     const path = patch.path[0] === "/" ? patch.path.slice(1) : patch.path
     const pathArr = path.split("/").reverse()
     const key = pathArr.splice(0,1)[0]
@@ -156,22 +158,22 @@ export class PatchPack {
 
     const node = this.schema.getChildNode(parent, key)
     if (patch.op !== "remove") {
-      if (node) {
+      if (node && updateSchema) {
         this.schema.deleteNode(node)
       }
       if (parent.type === MAP_NODE && patch.op === "add") {
-        data.push([key, this.encodeNode(patch.value, { parent, key, index })])
+        data.push([key, this.encodeNode(patch.value, { parent, key, index, updateSchema })])
       } else {
-        data.push(this.encodeNode(patch.value, { parent, key, index }))
+        data.push(this.encodeNode(patch.value, { parent, key, index, updateSchema }))
       }
     }
 
     if (patch.op !== "add" && "oldValue" in patch) {
-      data.push(this.encodeNode(patch.oldValue, { parent, key, index }))
+      data.push(this.encodeNode(patch.oldValue, { parent, key, index, updateSchema }))
     }
 
     // delete node if remove operation
-    if (patch.op === "remove" && node) {
+    if (patch.op === "remove" && node && updateSchema) {
       this.schema.deleteNode(node)
     }
 

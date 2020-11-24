@@ -13,6 +13,10 @@ export class Schema {
     return this._types.map(( { name, props }) => [ name, ...props ])
   }
 
+  public typeByName(name: string): ISchemaType | undefined {
+    return this._types.find((t) => t.name === name)
+  }
+
   public get root(): ISchemaNode {
     return this._nodes[0]
   }
