@@ -2,7 +2,7 @@
 <img alt="npm" src="https://img.shields.io/npm/v/patchpack"> <img alt="npm type definitions" src="https://img.shields.io/npm/types/patchpack"> <img alt="GitHub" src="https://img.shields.io/npm/l/patchpack">
 
 
-A binary JsonPatch serializer based on schema. Efficiently encode state object and JsonPatch in to compact byte buffers and then decode them back in to objects on the receiver. Integrates very well with observable state and with WebSockets.
+A binary JsonPatch serializer based on schema. Efficiently encode state object and JsonPatch in to compact byte buffers and then decode them back in to objects on the receiver. Integrates very well with observable state and WebSockets.
 
 Originally it was part of [mosx](https://github.com/udamir/mosx) framework, but then it moved to separate package.
 
