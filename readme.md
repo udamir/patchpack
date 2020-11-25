@@ -45,12 +45,12 @@ const state: any = {
   }
 }
 
-// create patchpack instance
+// create patchpack instance and define schema types
 const ppServer = new PatchPack({
-  "State": ["clients", "objects", "foo"],
+  State: ["clients", "objects", "foo"],
   Client, // it is recommended to use class in schema
-  "Object": ["id", "name", "foo"],
-  "Foo": ["baz"]
+  Object: ["id", "name", "foo"],
+  Foo: ["baz"]
 })
 
 const encodedStateWithTypes = ppServer.encodeState(state)
