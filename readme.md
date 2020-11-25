@@ -15,8 +15,8 @@ npm install --save patchpack
 ## Browser
 A browser version of patchpack is also available:
 ```
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.3/browser/patchpack.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.3/browser/patchpack.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.4/browser/patchpack.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.4/browser/patchpack.js"></script>
 ```
 
 ## Example

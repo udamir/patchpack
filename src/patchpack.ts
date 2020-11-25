@@ -228,4 +228,12 @@ export class PatchPack {
 
     return patch
   }
+
+  public encode(value: any): Buffer {
+    return notepack.encode(value)
+  }
+
+  public decode(buffer: Buffer): any {
+    return notepack.decode(buffer)
+  }
 }

@@ -12,6 +12,7 @@ export class Schema {
       if (Array.isArray(t)) {
         return { name, props: t, index: i }
       } else {
+        // tslint:disable-next-line: new-parens
         return { name: t.name, props: Object.getOwnPropertyNames(new t), index: i, ref: t}
       }
     })
