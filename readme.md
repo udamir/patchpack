@@ -87,7 +87,7 @@ console.log(JSON.stringify(patch2).length)
 
 ```
 
-Send encodedState, encodedPatch1 and encodedPatch2 to Clinet -->>
+Send encodedStateWithTypes, encodedPatch1 and encodedPatch2 to Clinet:
 
 ```ts
 /** Client side */
