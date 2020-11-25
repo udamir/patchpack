@@ -22,6 +22,11 @@ export class Schema {
     return this._types.map(( { name, props }) => [ name, ...props ])
   }
 
+  public addType(name: string, props: string[], ref?: Type<any>) {
+    const index = this._types.length
+    this._types.push({ name, props, index, ref })
+  }
+
   public typeByName(name: string): ISchemaType | undefined {
     return this._types.find((t) => t.name === name)
   }

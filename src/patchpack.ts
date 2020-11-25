@@ -41,7 +41,7 @@ export class PatchPack {
     const { parent, key = "", index = -1, updateSchema = true } = meta
 
     // add key to map schema keys
-    if (parent && parent.type === MAP_NODE) {
+    if (parent && parent.type === MAP_NODE && updateSchema) {
       parent.keys!.push(key as string)
     }
 
@@ -51,8 +51,11 @@ export class PatchPack {
 
     if (Array.isArray(value)) {
 
-      // create schema node
-      node = node || this.schema.createNode(this.schema.nextId, parent, ARRAY_NODE, key, index)
+      if (!node && updateSchema) {
+        // create schema node
+        node = this.schema.createNode(this.schema.nextId, parent, ARRAY_NODE, key, index)
+      }
+      check(!node, `Cannot encode value - node not found on path: ${this.schema.getNodePath(parent, key)}`)
 
       // set encoded node type and id
       data.push(ARRAY_NODE, node.id)
@@ -65,9 +68,10 @@ export class PatchPack {
 
       // check value type
       const type = this.schema.findType(value) || MAP_NODE
-
-      // create schema node
-      node = node || updateSchema && this.schema.createNode(this.schema.nextId, parent, type, key, index)
+      if (!node && updateSchema) {
+        // create schema node
+        node = this.schema.createNode(this.schema.nextId, parent, type, key, index)
+      }
       check(!node, `Cannot encode value - node not found on path: ${this.schema.getNodePath(parent, key)}`)
 
       data.push(type !== MAP_NODE ? type.index : MAP_NODE, node.id)
