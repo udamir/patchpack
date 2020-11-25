@@ -66,7 +66,7 @@ export class Schema {
     } else if (sn.type === ARRAY_NODE) {
       return sn.items.find(({ index }) => index === +name)
     } else {
-      return sn.items[sn.type.props.indexOf(name as string)]
+      return sn.items.find(({ key }) => key === name)
     }
   }
 
