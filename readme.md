@@ -67,7 +67,7 @@ console.log(JSON.stringify(state).length)
 const client = new Client("FooBaz", "test" )
 state.clients["3"] = client
 
-const patch1: IJsonPatch = { op: "add", path: "/clients/3", value: client }
+const patch1 = { op: "add", path: "/clients/3", value: client }
 const encodedPatch1 = ppServer.encodePatch(patch1)
 console.log(encodedPatch1.length)
 // 22
@@ -76,7 +76,7 @@ console.log(JSON.stringify(patch1).length)
 // 72
 
 // generate patch
-const patch2: IJsonPatch = { op: "replace", path: "/foo/baz", value: true }
+const patch2 = { op: "replace", path: "/foo/baz", value: true }
 const encodedPatch2 = ppServer.encodePatch(patch2)
 
 console.log(encodedPatch2.length)
@@ -84,10 +84,9 @@ console.log(encodedPatch2.length)
 
 console.log(JSON.stringify(patch2).length)
 // 47
-
 ```
 
-Send encodedStateWithTypes, encodedPatch1 and encodedPatch2 to Clinet:
+Send `encodedStateWithTypes`, `encodedPatch1` and `encodedPatch2` to Client and decode them:
 
 ```ts
 /** Client side */
