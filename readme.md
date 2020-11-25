@@ -48,7 +48,7 @@ const state: any = {
 // create patchpack instance
 const ppServer = new PatchPack({
   "State": ["clients", "objects", "foo"],
-  Client, // class can be used in schema
+  Client, // it is recommended to use class in schema
   "Object": ["id", "name", "foo"],
   "Foo": ["baz"]
 })
