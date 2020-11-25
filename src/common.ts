@@ -1,6 +1,8 @@
 export const ARRAY_NODE = -1
 export const MAP_NODE = -2
 
+export type Type<T> = new (...args: any[]) => T
+
 export type JsonPatchOp = "replace" | "add" | "remove"
 
 export interface IJsonPatch {
@@ -42,4 +44,5 @@ export interface ISchemaType {
   name: string
   index: number
   props: string[]
+  ref?: Type<any>
 }

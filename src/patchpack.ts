@@ -1,6 +1,6 @@
 import * as notepack from "notepack.io"
 
-import { check, IReversibleJsonPatch, ISchemaNode, MAP_NODE, ARRAY_NODE, TSchemaPatch } from "./common"
+import { check, IReversibleJsonPatch, ISchemaNode, MAP_NODE, ARRAY_NODE, TSchemaPatch, Type } from "./common"
 import { Schema } from "./schema"
 
 interface IBuildMeta {
@@ -11,9 +11,9 @@ interface IBuildMeta {
 }
 
 export class PatchPack {
-  public schema: Schema
-  constructor (types?: { [type: string]: string[] }) {
-    this.schema = new Schema(types)
+  public schema!: Schema
+  constructor (types?: { [type: string]: string[] | Type<any> }) {
+    this.schema = new Schema(types || {})
   }
 
   public encodeState(value: any, includeTypes = true, updateSchema = true): Buffer {

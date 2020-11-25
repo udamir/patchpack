@@ -1,12 +1,20 @@
-import { MAP_NODE, ARRAY_NODE, ISchemaType, ISchemaNode, NodeType, TSchemaType } from "./common"
+import { MAP_NODE, ARRAY_NODE, ISchemaType, ISchemaNode, NodeType, TSchemaType, Type } from "./common"
 
 export class Schema {
   private _types!: ISchemaType[]
   private _nodes!: ISchemaNode[]
   private _nextId: number = 0
 
-  constructor (types: { [type: string]: string[] } = {}) {
-    this.init(Object.keys(types).map((name) => [ name, ...types[name] ]))
+  constructor (types: { [type: string]: string[] | Type<any>}) {
+    this._nodes = []
+    this._types = Object.keys(types).map((name, i) => {
+      const t = types[name]
+      if (Array.isArray(t)) {
+        return { name, props: t, index: i }
+      } else {
+        return { name: t.name, props: Object.getOwnPropertyNames(new t), index: i, ref: t}
+      }
+    })
   }
 
   public get types(): TSchemaType[] {
@@ -31,6 +39,7 @@ export class Schema {
 
     types.forEach(([name, ...props]) => this._types.push({ name, props, index: this._types.length }))
   }
+
   public getNode(nodeId: number): ISchemaNode | undefined {
     return this._nodes.find((n) => n.id === nodeId)
   }
@@ -56,8 +65,12 @@ export class Schema {
   }
 
   public findType(value: any): ISchemaType | undefined {
+
     const keys = Object.keys(value)
     const type = this._types.find((t) => {
+      if (t.ref) {
+        return value instanceof t.ref
+      }
       for (const key of keys) {
         if (t.props.indexOf(key) < 0) { return false }
       }

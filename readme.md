@@ -15,8 +15,8 @@ npm install --save patchpack
 ## Browser
 A browser version of patchpack is also available:
 ```
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.2/browser/patchpack.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.2/browser/patchpack.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.3/browser/patchpack.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patchpack@0.3.3/browser/patchpack.js"></script>
 ```
 
 ## Example
@@ -26,11 +26,15 @@ A browser version of patchpack is also available:
 
 import { PatchPack } from "patchpack"
 
-// initial state 
-const state = {
+class Client {
+  constructor(public name: string, public info = "") {}
+}
+
+// initial state
+const state: any = {
   clients: {
-    "1": { name: "Foo" },
-    "2": { name: "Baz", info: "FooBaz" }
+    "1": new Client("Foo"),
+    "2": new Client("Baz", "FooBaz"),
   },
   objects: [
     { id: 1, name: "Foo" },
@@ -44,31 +48,26 @@ const state = {
 // create patchpack instance
 const ppServer = new PatchPack({
   "State": ["clients", "objects", "foo"],
-  "Client": ["name", "info"],
+  Client, // class can be used in schema
   "Object": ["id", "name", "foo"],
   "Foo": ["baz"]
 })
 
-// encode state with types schema
 const encodedStateWithTypes = ppServer.encodeState(state)
 console.log(encodedStateWithTypes.length)
-// 134
+// 135
 
-// encode state without types schema
 const encodedState = ppServer.encodeState(state, false)
 console.log(encodedState.length)
-// 59
+// 60
 
 console.log(JSON.stringify(state).length)
-// 155
+// 165
 
-// lets add client to state.clients
-state.clients["3"] = { name: "FooBaz", info: "test" }
+const client = new Client("FooBaz", "test" )
+state.clients["3"] = client
 
-// generate patch1
-const patch1 = { op: "add", path: "/clients/3", value: { name: "FooBaz", info: "test" } }
-
-// encode patch with patchpack
+const patch1: IJsonPatch = { op: "add", path: "/clients/3", value: client }
 const encodedPatch1 = ppServer.encodePatch(patch1)
 console.log(encodedPatch1.length)
 // 22
@@ -76,37 +75,38 @@ console.log(encodedPatch1.length)
 console.log(JSON.stringify(patch1).length)
 // 72
 
-// lets update property baz
-state.foo.baz = true
-
-// generate patch2
-const patch2 = { op: "replace", path: "/foo/baz", value: true }
+// generate patch
+const patch2: IJsonPatch = { op: "replace", path: "/foo/baz", value: true }
 const encodedPatch2 = ppServer.encodePatch(patch2)
+
 console.log(encodedPatch2.length)
 // 5
 
 console.log(JSON.stringify(patch2).length)
 // 47
 
-// send encodedState, encodedPatch1 and encodedPatch2 to Clinet -->>
 ```
+
+Send encodedState, encodedPatch1 and encodedPatch2 to Clinet -->>
 
 ```ts
 /** Client side */
-
-// create patchpack instance on client side
 const ppClient = new PatchPack()
 
-// decode initial state
 const decodedState = ppClient.decodeState(encodedStateWithTypes)
+console.log(decodedState)
 
 // {
-//   clients: { '1': { name: 'Foo' }, '2': { name: 'Baz', info: 'FooBaz' } },
-//   objects: [ { id: 1, name: 'Foo' }, { id: 2, name: 'Foo', foo: 'Baz' } ],
+//   clients: {
+//     '1': { name: 'Foo', info: '' },
+//     '2': { name: 'Baz', info: 'FooBaz' }
+//   },
+//   objects: [
+//      { id: 1, name: 'Foo' },
+//      { id: 2, name: 'Foo', foo: 'Baz' } ],
 //   foo: { baz: false }
 // }
 
-// decode patch
 const decodedPatch1 = ppClient.decodePatch(encodedPatch1)
 console.log(decodedPatch1)
 
