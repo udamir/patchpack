@@ -125,6 +125,10 @@ export class Schema {
   }
 
   public deleteNode(node: ISchemaNode) {
+    if (node.parent) {
+      const itemIndex = node.parent.items.indexOf(node)
+      node.parent.items.splice(itemIndex, 1)
+    }
     node.items.forEach((child) => this.deleteNode(child))
     const index = this._nodes.indexOf(node)
     this._nodes.splice(index, 1)
