@@ -162,22 +162,23 @@ export class PatchPack {
 
     const node = this.schema.getChildNode(parent, key)
     if (patch.op !== "remove") {
-      if (node && updateSchema) {
-        this.schema.deleteNode(node)
-      }
+      if (node) { node.key = '' } // hide node for patch value
+
       if (parent.type === MAP_NODE && patch.op === "add") {
         data.push([key, this.encodeNode(patch.value, { parent, key, index, updateSchema })])
       } else {
         data.push(this.encodeNode(patch.value, { parent, key, index, updateSchema }))
       }
+
+      if (node) { node.key = key } // restore node
     }
 
     if (patch.op !== "add" && "oldValue" in patch) {
       data.push(this.encodeNode(patch.oldValue, { parent, key, index, updateSchema }))
     }
 
-    // delete node if remove operation
-    if (patch.op === "remove" && node && updateSchema) {
+    // delete old node
+    if (node && updateSchema) {
       this.schema.deleteNode(node)
     }
 
