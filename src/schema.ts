@@ -57,7 +57,7 @@ export class Schema {
       pathArr.push(node.key)
       node = node.parent!
     }
-    return pathArr.reverse().join("/") + (!key ? "" : ("/" + key))
+    return pathArr.reverse().join("/") + (key === undefined ? "" : ("/" + key))
   }
 
   public getChildNode(sn: ISchemaNode, name: string | number): ISchemaNode | undefined {

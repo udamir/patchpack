@@ -1,6 +1,6 @@
 {
   "name": "patchpack",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Json patch serializer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,9 +13,9 @@
   },
   "scripts": {
     "banchmark": "ts-node ./temp/banchmark.ts",
-    "patch": "tsc && npm version patch",
-    "major": "tsc && npm version major",
-    "minor": "tsc && npm version minor",
+    "patch": "tsc && npm version patch && npm run browser",
+    "major": "tsc && npm version major && npm run browser",
+    "minor": "tsc && npm version minor && npm run browser",
     "build": "tsc",
     "test": "jest --verbose --coverage",
     "browser": "webpack"
