@@ -1,6 +1,6 @@
 import * as notepack from "notepack.io"
 
-import { check, IReversibleJsonPatch, ISchemaNode, MAP_NODE, ARRAY_NODE, TSchemaPatch, Type } from "./common"
+import { check, IReversibleJsonPatch, ISchemaNode, MAP_NODE, ARRAY_NODE, TSchemaPatch, Type, ISchemaType } from "./common"
 import { Schema } from "./schema"
 
 interface IBuildMeta {
@@ -67,7 +67,7 @@ export class PatchPack {
     } else if (typeof value === "object" && value) {
 
       // check value type
-      const type = this.schema.findType(value) || MAP_NODE
+      const type = node ? node.type as ISchemaType : this.schema.findType(value) || MAP_NODE
       if (!node && updateSchema) {
         // create schema node
         node = this.schema.createNode(this.schema.nextId, parent, type, key, index)
