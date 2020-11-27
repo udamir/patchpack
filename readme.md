@@ -6,6 +6,12 @@ A binary JsonPatch serializer based on schema. Efficiently encode state object a
 
 Originally it was part of [mosx](https://github.com/udamir/mosx) framework, but then it moved to separate package.
 
+## Motivation
+
+I was working on an [magx](https://github.com/udamir/magx) game server framework that used WebSockets to syncronize state between server and clients. Syncronization principle is simple: first server sends full state to clients then on every change sends patches in JsonPatch format. I have found the problem that sending a lot of patches without serialization is a waste of bandwidth.
+
+As state's schema is known on server side it can be sent to the clients, then state and each patch can be encoded based on that schema on server side and decoded back on client side. State schema is not static that means it must be also syncronized with clients. This sophisticated approach can significantly reduce patch size and bandwidth usage.
+
 ## Installation
 
 ```
