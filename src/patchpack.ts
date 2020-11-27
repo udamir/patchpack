@@ -228,6 +228,7 @@ export class PatchPack {
       const value = values.reverse().pop()
       if (parent.type === MAP_NODE && patch.op === "add") {
         key = value[0]
+        parent.keys?.push(key as string)
         patch.value = this.decodeNode(value[1], { parent, key, index: propIndex })
       } else {
         patch.value = this.decodeNode(value, { parent, key, index: propIndex })

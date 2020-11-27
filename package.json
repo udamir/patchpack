@@ -1,6 +1,6 @@
 {
   "name": "patchpack",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "description": "Json patch serializer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
