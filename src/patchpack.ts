@@ -8,6 +8,7 @@ interface IBuildMeta {
   key: number | string
   index: number
   updateSchema?: boolean
+  checkDeleted?: boolean
 }
 
 export class PatchPack {
@@ -38,15 +39,26 @@ export class PatchPack {
   }
 
   private encodeNode(value: any, meta: IBuildMeta): any {
-    const { parent, key = "", index = -1, updateSchema = true } = meta
+    const { parent, key = "", index = -1, updateSchema = true, checkDeleted } = meta
 
     // add key to map schema keys
     if (parent && parent.type === MAP_NODE && updateSchema) {
       parent.keys!.push(key as string)
     }
 
-    // get child node
-    let node = parent ? this.schema.getChildNode(parent, key)! : this.schema.root
+    let node: ISchemaNode | undefined
+    if (!parent) {
+      node = this.schema.root
+    } else {
+      // get child node
+      if (checkDeleted) {
+        node = this.schema.getDeletedNode(parent, key)!
+      }
+      if (!node) {
+        node = this.schema.getChildNode(parent, key)!
+      }
+    }
+
     const data = []
 
     if (Array.isArray(value)) {
@@ -72,6 +84,7 @@ export class PatchPack {
         // create schema node
         node = this.schema.createNode(this.schema.nextId, parent, type, key, index)
       }
+
       check(!node, `Cannot encode value - node not found on path: ${this.schema.getNodePath(parent, key)}`)
 
       data.push(type !== MAP_NODE ? type.index : MAP_NODE, node.id)
@@ -79,12 +92,12 @@ export class PatchPack {
       if (type !== MAP_NODE) {
         // set encoded props
         Object.keys(value).forEach((k) => {
-          data.push(this.encodeNode(value[k], { parent: node, key: k, index: type.props.indexOf(k), updateSchema }))
+          data.push(this.encodeNode(value[k], { ...meta, parent: node, key: k, index: type.props.indexOf(k) }))
         })
       } else {
         // set map items
         Object.keys(value).forEach((k, i) => {
-          data.push(k, this.encodeNode(value[k], { parent: node, key: k, index: i, updateSchema }))
+          data.push(k, this.encodeNode(value[k], { ...meta, parent: node, key: k, index: i }))
         })
       }
     } else {
@@ -148,6 +161,10 @@ export class PatchPack {
     const pathArr = path.split("/").reverse()
     const key = pathArr.splice(0,1)[0]
 
+    if (updateSchema) {
+      this.schema.clearDeleted()
+    }
+
     let parent: ISchemaNode = this.schema.root!
     check (!parent,`Cannot encode patch, you need to build schema first!`)
 
@@ -162,23 +179,23 @@ export class PatchPack {
 
     const node = this.schema.getChildNode(parent, key)
     if (patch.op !== "remove") {
-      if (node) { node.key = '' } // hide node for patch value
+      if (node && updateSchema) {
+        this.schema.deleteNode(node)
+      }
 
       if (parent.type === MAP_NODE && patch.op === "add") {
         data.push([key, this.encodeNode(patch.value, { parent, key, index, updateSchema })])
       } else {
         data.push(this.encodeNode(patch.value, { parent, key, index, updateSchema }))
       }
-
-      if (node) { node.key = key } // restore node
     }
 
     if (patch.op !== "add" && "oldValue" in patch) {
-      data.push(this.encodeNode(patch.oldValue, { parent, key, index, updateSchema }))
+      data.push(this.encodeNode(patch.oldValue, { parent, key, index, updateSchema: false, checkDeleted: true }))
     }
 
     // delete old node
-    if (node && updateSchema) {
+    if (patch.op !== "remove" && node && updateSchema) {
       this.schema.deleteNode(node)
     }
 

@@ -3,10 +3,12 @@ import { MAP_NODE, ARRAY_NODE, ISchemaType, ISchemaNode, NodeType, TSchemaType, 
 export class Schema {
   private _types!: ISchemaType[]
   private _nodes!: ISchemaNode[]
+  private _deleted: ISchemaNode[]
   private _nextId: number = 0
 
   constructor (types: { [type: string]: string[] | Type<any>}) {
     this._nodes = []
+    this._deleted = []
     this._types = Object.keys(types).map((name, i) => {
       const t = types[name]
       if (Array.isArray(t)) {
@@ -20,6 +22,10 @@ export class Schema {
 
   public get types(): TSchemaType[] {
     return this._types.map(( { name, props }) => [ name, ...props ])
+  }
+
+  public get deleted(): ISchemaNode[] {
+    return this._deleted
   }
 
   public addType(name: string, props: string[], ref?: Type<any>) {
@@ -132,5 +138,19 @@ export class Schema {
     node.items.forEach((child) => this.deleteNode(child))
     const index = this._nodes.indexOf(node)
     this._nodes.splice(index, 1)
+    this._deleted.push(node)
+  }
+
+  public getDeletedNode(sn: ISchemaNode | undefined, name: string | number): ISchemaNode | undefined {
+    if (!sn) { return }
+    if (sn.type === ARRAY_NODE) {
+      return this._deleted.find(({ parent, index }) => index === +name && parent === sn)
+    } else {
+      return this._deleted.find(({ parent, key }) => key === name && parent === sn)
+    }
+  }
+
+  public clearDeleted() {
+    this._deleted = []
   }
 }
