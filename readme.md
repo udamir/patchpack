@@ -12,6 +12,10 @@ I was working on an [magx](https://github.com/udamir/magx) game server framework
 
 As state's schema is known on server side it can be sent to the clients, then state and each patch can be encoded based on that schema on server side and decoded back on client side. State schema is not static that means it must be also syncronized with clients. This sophisticated approach can significantly reduce patch size and bandwidth usage.
 
+## Concept
+
+![](https://github.com/udamir/patchpack/blob/master/.docs/patchpack.png?raw=true)
+
 ## Installation
 
 ```
