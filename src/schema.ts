@@ -1,4 +1,4 @@
-import { MAP_NODE, ARRAY_NODE, ISchemaType, ISchemaNode, NodeType, TSchemaType, Type } from "./common"
+import { MAP_NODE, ARRAY_NODE, ISchemaType, ISchemaNode, NodeType, TSchemaType, Type, check } from "./common"
 
 export class Schema {
   private _types!: ISchemaType[]
@@ -108,6 +108,7 @@ export class Schema {
   public getChildName (parent: ISchemaNode | undefined, index: number): string | number {
     if (!parent) { return "" }
     if (parent.type === MAP_NODE) {
+      check (index >= parent.keys!.length, `Cannot decode value - map ${ this.getNodePath(parent) } doesnt hava key with index ${index}\n${parent.keys!.toString()}`)
       return parent.keys![index]
     } else if (parent.type === ARRAY_NODE) {
       return index

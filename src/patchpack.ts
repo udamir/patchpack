@@ -115,14 +115,27 @@ export class PatchPack {
     // check if encoded primitive value
     if (!encoded || !Array.isArray(encoded)) { return encoded }
 
-    const { parent, key, index } = meta
+    const { parent, key, index, updateSchema = true, checkDeleted = false } = meta
     const [ type, id, ...data ] = encoded
 
     const schemaType = this.schema.getType(type)!
     check(!schemaType, `Cannot decode state - unknown type: ${type}`)
 
+    let node: ISchemaNode | undefined
     // create schema node
-    const node = this.schema.createNode(id, parent, schemaType, key, index)
+    if (updateSchema) {
+      node = this.schema.createNode(id, parent, schemaType, key, index)
+    } else {
+      // get child node
+      if (checkDeleted) {
+        node = this.schema.getDeletedNode(parent, key)!
+      }
+      if (!node && parent) {
+        node = this.schema.getChildNode(parent, key)!
+      }
+    }
+
+    check(!node, `Cannot decode value - node for ${this.schema.getNodePath(parent, key)} not found}`)
 
     const result = {} as any
 
@@ -133,7 +146,7 @@ export class PatchPack {
     } else if (schemaType === MAP_NODE) {
       // decode map items
       for (let i = 0; i < data.length; i += 2) {
-        const childIndex = node.keys!.push(data[i]) - 1
+        const childIndex = node!.keys!.push(data[i]) - 1
 
         const value = this.decodeNode(data[i+1], { parent: node, key: data[i], index: childIndex })
 
@@ -214,7 +227,12 @@ export class PatchPack {
 
     const patch: any = { op: ["add", "replace", "remove"][opIndex], path: '' }
 
-    let key = this.schema.getChildName(parent, propIndex)
+    // get kety from new map item or from schema
+    const key = parent.type === MAP_NODE && patch.op === "add"
+      ? values[0][0]
+      : this.schema.getChildName(parent, propIndex)
+
+    // get node from schema
     const node = this.schema.getChildNode(parent, key)
 
     if (values.length && patch.op !== "remove") {
@@ -227,7 +245,6 @@ export class PatchPack {
       // decode value
       const value = values.reverse().pop()
       if (parent.type === MAP_NODE && patch.op === "add") {
-        key = value[0]
         parent.keys?.push(key as string)
         patch.value = this.decodeNode(value[1], { parent, key, index: propIndex })
       } else {
@@ -236,7 +253,9 @@ export class PatchPack {
     }
 
     if (values.length && patch.op !== "add") {
-      patch.oldValue = this.decodeNode(values.pop(), { parent, key, index: propIndex })
+      patch.oldValue = this.decodeNode(values.pop(), {
+        parent, key, index: propIndex, updateSchema: false, checkDeleted: true
+      })
     }
 
     if (node && patch.op === "remove") {
