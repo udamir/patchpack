@@ -1,15 +1,21 @@
 {
   "name": "patchpack",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Json patch serializer",
   "main": "dist/index.js",
+  "source": "src/index.ts",
   "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
   "files": [
     "dist",
     "browser"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udamir/patchpack.git"
+  },
   "browser": {
-    "./dist/index.js": "./browser/patchpck.js"
+    "./dist/index.js": "./browser/patchpack.js"
   },
   "scripts": {
     "banchmark": "ts-node ./temp/banchmark.ts",
