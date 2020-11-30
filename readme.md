@@ -131,6 +131,10 @@ console.log(decodedPatch2)
 // { op: 'replace', path: '/foo/baz', value: true }
 ```
 
+## Documentation
+
+Documentation and specification will be soon...
+
 ## License
 
 MIT
