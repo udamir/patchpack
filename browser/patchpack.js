@@ -1,5 +1,15 @@
-/*! patchpack@0.4.1 */
-/******/ (function(modules) { // webpackBootstrap
+/*! patchpack@0.4.2 */
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else if(typeof exports === 'object')
+		exports["patchpack"] = factory();
+	else
+		root["patchpack"] = factory();
+})(self || this, function() {
+return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -1215,3 +1225,4 @@ module.exports = decode;
 
 /***/ })
 /******/ ]);
+});

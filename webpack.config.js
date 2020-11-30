@@ -3,42 +3,47 @@ const path = require('path')
 const pkg = require('./package.json');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
-module.exports = function (options) {
-  if (!options) options = {};
+module.exports = function(options) {
+    if (!options) options = {};
 
-  return {
-    mode: "production",
-    entry: {
-      "patchpack": path.join(__dirname, "index.ts"),
-      "patchpack.min": path.join(__dirname, "index.ts"),
-    },
-    output: {
-      path: path.join(__dirname, "./browser/"),
-      filename: "[name].js",
+    return {
+        mode: "production",
+        entry: {
+            "patchpack": path.join(__dirname, "index.ts"),
+            "patchpack.min": path.join(__dirname, "index.ts"),
+        },
+        output: {
+            path: path.join(__dirname, "./browser/"),
+            filename: "[name].js",
 
-      globalObject: "self || this", // compatibility with Web Workers.
-    },
+            globalObject: "self || this", // compatibility with Web Workers.
+            libraryTarget: "umd",
+            library: "patchpack"
+        },
 
-    module: {
-      rules: [
-        { test: /\.ts$/, loader: "ts-loader" },
-      ],
-    },
+        // devtool: 'inline-source-map',
 
-    plugins: [
-      new webpack.BannerPlugin({ banner: `patchpack@${pkg.version}` }),
-    ],
+        module: {
+            rules: [
+                { test: /\.ts$/, loader: "ts-loader" },
+            ],
+        },
 
-    optimization: {
-      minimize: true,
-      minimizer: [new UglifyJsPlugin({
-        include: /\.min\.js$/
-      })]
-    },
+        plugins: [
+            new webpack.BannerPlugin({ banner: `patchpack@${pkg.version}` }),
+            // new webpack.optimize.UglifyJsPlugin({ include: /\.min\.js$/, minimize: true})
+        ],
 
-    resolve: {
-      extensions: ['.ts', '.js', '.json']
+        optimization: {
+            minimize: true,
+            minimizer: [new UglifyJsPlugin({
+                include: /\.min\.js$/
+            })]
+        },
+
+        resolve: {
+            extensions: ['.ts', '.js', '.json']
+        }
+
     }
-
-  }
 };
