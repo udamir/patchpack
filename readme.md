@@ -66,13 +66,18 @@ const encodedStateWithTypes = ppServer.encodeState(state)
 
 const encodedState = ppServer.encodeState(state, false)
 
+// add item
+
 const client = new Client("FooBaz", "test" )
 state.clients["3"] = client
 
 const patch1 = { op: "add", path: "/clients/3", value: client }
 const encodedPatch1 = ppServer.encodePatch(patch1)
 
-// generate patch
+// update value
+
+state.foo.baz = true
+
 const patch2 = { op: "replace", path: "/foo/baz", value: true }
 const encodedPatch2 = ppServer.encodePatch(patch2)
 
