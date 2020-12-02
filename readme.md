@@ -83,12 +83,12 @@ const encodedPatch2 = ppServer.encodePatch(patch2)
 
 ```
 
-Benchmark for encoded object size:
-|        | patchpack | JSON.stringify | messagePack |
-| ------ | --------- | -------------- | ----------- |
-| state  | 60        | 165            | 107         |
-| patch1 | 22        | 72             | 53          |
-| patch2 | 5         | 47             | 33          |
+Benchmark for encoded object size (byte):
+|        | patchpack | messagePack |JSON.stringify |
+| ------ | --------- | ----------- | ------------- |
+| state  | 60        | 107  (+78%) | 165   (+175%) |
+| patch1 | 22        | 53  (+140%) | 72    (+227%) |
+| patch2 | 5         | 33  (+560%) | 47    (+840%) |
 
 Send `encodedStateWithTypes`, `encodedPatch1` and `encodedPatch2` to Client and decode them:
 
