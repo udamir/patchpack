@@ -50,9 +50,7 @@ const state: any = {
     { id: 1, name: "Foo" },
     { id: 2, name: "Foo", foo: "Baz" },
   ],
-  foo: {
-    baz: false
-  }
+  foo: { baz: false }
 }
 
 // create patchpack instance and define schema types
@@ -63,38 +61,29 @@ const ppServer = new PatchPack({
   Foo: ["baz"]
 })
 
+// encoded state can include types definition
 const encodedStateWithTypes = ppServer.encodeState(state)
-console.log(encodedStateWithTypes.length)
-// 135
 
 const encodedState = ppServer.encodeState(state, false)
-console.log(encodedState.length)
-// 60
-
-console.log(JSON.stringify(state).length)
-// 165
 
 const client = new Client("FooBaz", "test" )
 state.clients["3"] = client
 
 const patch1 = { op: "add", path: "/clients/3", value: client }
 const encodedPatch1 = ppServer.encodePatch(patch1)
-console.log(encodedPatch1.length)
-// 22
-
-console.log(JSON.stringify(patch1).length)
-// 72
 
 // generate patch
 const patch2 = { op: "replace", path: "/foo/baz", value: true }
 const encodedPatch2 = ppServer.encodePatch(patch2)
 
-console.log(encodedPatch2.length)
-// 5
-
-console.log(JSON.stringify(patch2).length)
-// 47
 ```
+
+Benchmark for encoded object size:
+|        | patchpack | JSON.stringify | messagePack |
+| ------ | --------- | -------------- | ----------- |
+| state  | 60        | 165            | 107         |
+| patch1 | 22        | 72             | 53          |
+| patch2 | 5         | 47             | 33          |
 
 Send `encodedStateWithTypes`, `encodedPatch1` and `encodedPatch2` to Client and decode them:
 
