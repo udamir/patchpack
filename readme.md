@@ -31,9 +31,8 @@ A browser version of patchpack is also available:
 
 ## Example
 
+### Server side
 ```ts
-/** Server side */
-
 import { PatchPack } from "patchpack"
 
 class Client {
@@ -82,6 +81,7 @@ const patch2 = { op: "replace", path: "/foo/baz", value: true }
 const encodedPatch2 = ppServer.encodePatch(patch2)
 
 ```
+### Benchmark
 
 Benchmark for encoded object size (byte):
 |        | patchpack | [messagePack](https://msgpack.org/) |JSON.stringify |
@@ -92,8 +92,8 @@ Benchmark for encoded object size (byte):
 
 Send `encodedStateWithTypes`, `encodedPatch1` and `encodedPatch2` to Client and decode them:
 
+### Client side
 ```ts
-/** Client side */
 const ppClient = new PatchPack()
 
 const decodedState = ppClient.decodeState(encodedStateWithTypes)
