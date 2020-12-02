@@ -84,7 +84,7 @@ const encodedPatch2 = ppServer.encodePatch(patch2)
 ```
 
 Benchmark for encoded object size (byte):
-|        | patchpack | messagePack |JSON.stringify |
+|        | patchpack | [messagePack](https://msgpack.org/) |JSON.stringify |
 | ------ | --------- | ----------- | ------------- |
 | state  | 60        | 107  (+78%) | 165   (+175%) |
 | patch1 | 22        | 53  (+140%) | 72    (+227%) |
