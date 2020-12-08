@@ -4,7 +4,7 @@
 
 A binary JsonPatch serializer based on schema. Efficiently encode state object and JsonPatch in to compact byte buffers and then decode them back in to objects on the receiver. Integrates very well with observable state and WebSockets.
 
-Originally it was part of [mosx](https://github.com/udamir/mosx) framework, but then it moved to separate package.
+Originally it was part of [mosx](https://github.com/udamir/mosx) State Management engine, but then it moved to separate package.
 
 ## Motivation
 
@@ -84,7 +84,7 @@ const encodedPatch2 = ppServer.encodePatch(patch2)
 ### Benchmark
 
 Benchmark for encoded object size (byte):
-|        | patchpack | [messagePack](https://msgpack.org/) |JSON.stringify |
+|        | PatchPack | [MessagePack](https://msgpack.org/) |JSON.stringify |
 | ------ | --------- | ----------- | ------------- |
 | state  | 60        | 107  (+78%) | 165   (+175%) |
 | patch1 | 22        | 53  (+140%) | 72    (+227%) |
