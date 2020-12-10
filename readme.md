@@ -84,11 +84,11 @@ const encodedPatch2 = ppServer.encodePatch(patch2)
 ### Benchmark
 
 Benchmark for encoded object size (byte):
-|        | PatchPack | [MessagePack](https://msgpack.org/) |JSON.stringify |
-| ------ | --------- | ----------- | ------------- |
-| state  | 60        | 107  (+78%) | 165   (+175%) |
-| patch1 | 22        | 53  (+140%) | 72    (+227%) |
-| patch2 | 5         | 33  (+560%) | 47    (+840%) |
+|        | PatchPack | [MessagePack](https://msgpack.org/) | JSON.stringify |
+| ------ | --------- | ----------------------------------- | -------------- |
+| state  | 60        | 107  (+78%)                         | 165   (+175%)  |
+| patch1 | 22        | 53  (+140%)                         | 72    (+227%)  |
+| patch2 | 5         | 33  (+560%)                         | 47    (+840%)  |
 
 Send `encodedStateWithTypes`, `encodedPatch1` and `encodedPatch2` to Client and decode them:
 
@@ -125,9 +125,121 @@ console.log(decodedPatch2)
 // { op: 'replace', path: '/foo/baz', value: true }
 ```
 
-## Documentation
+# Documentation
 
-Documentation and specification will be soon...
+## Patchpack
+
+### constructor 
+Return instance of PatchPack with defined schema types
+```ts
+constructor (types?: { [type: string]: string[] | Type<any> })
+```
+
+Types can be defined in 2 ways:
+- array of properties
+- Class name
+
+Example:
+```ts
+class User {
+  constructor (public name: string) {}
+}
+
+class Item {
+  constructor (public id: number) {}
+}
+
+const state = {
+  users: [ new User("John"), new User("Santa") ]
+  item: new Item(123) 
+}
+
+const pp = new PatchPack({
+  State: ["users", "item"],
+  User,
+  Item,
+})
+```
+### encodeState
+Encode state and return in binary format
+```ts
+encodeState(state: any, includeTypes = true, updateSchema = true): Buffer
+```
+
+If parameter `includeTypes = false` used, decoder instance of PatchPack must be created with the same types.
+
+First time state encoding must be with `updateSchema = true`. If you need to encode state with the same schema second time `updateSchema` can be set as `false`.
+
+### decodeState
+Decode state from binary format to object
+```ts
+decodeState(buffer: Buffer, updateSchema = true): any
+```
+
+First time state decoding must be with `updateSchema = true`. If you need to decode the same state second time `updateSchema` must be set as `false`.
+
+Example:
+```ts
+const pp = new PatchPack()
+const state = pp.decodeState(encodedStatewWithTypes)
+```
+
+### encodePatch
+Encode JsonPatch and return in binary format
+```ts
+encodePatch(patch: IReversibleJsonPatch, updateSchema = true): Buffer
+```
+
+First time patch encoding must be with `updateSchema = true`. If you need to encode the same patch second time `updateSchema` must be set as `false`.
+
+The following JsonPatch operation are supported:
+- add
+- replace
+- remove
+
+ReversibleJsonPatch with `oldValue` is supported
+
+Example:
+```ts
+// JsonPatch
+const p1 = pp.encodePatch({
+  op: "replace",
+  path: "/a/b/c",
+  value: "100",
+})
+
+// ReversibleJsonPatch
+const p1 = pp.encodePatch({
+  op: "replace",
+  path: "/a/b/c",
+  value: "100",
+  oldValue: "99",
+})
+```
+
+### decodePatch
+Decode patch from binary format to JsonPatch (or ReversibleJsonPatch).
+```ts
+decodePatch (buffer: Buffer, updateSchema = true): IReversibleJsonPatch
+```
+
+First time patch decoding must be with `updateSchema = true`. If you need to decode the same patch second time `updateSchema` must be set as `false`.
+
+### PatchPack.encode
+Encode object to binary with last MessagePack specification.
+```ts
+static encode(value: any): Buffer
+```
+
+### PatchPack.decode
+Decode binary to object with last MessagePack specification.
+```ts
+static decode(buffer: Buffer): any
+```
+
+## Specification 
+
+will be soon...
 
 ## License
 

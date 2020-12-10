@@ -28,14 +28,14 @@ export class PatchPack {
     return notepack.encode(snapshot)
   }
 
-  public decodeState<T = any>(buffer: Buffer) {
+  public decodeState(buffer: Buffer, updateSchema = true): any {
     const [encodedNode, types] = notepack.decode(buffer)
 
     // apply schema types
     this.schema.init(types)
 
     // decode snapshot
-    return this.decodeNode(encodedNode, { key: "", index: -1 })
+    return this.decodeNode(encodedNode, { key: "", index: -1, updateSchema })
   }
 
   private encodeNode(value: any, meta: IBuildMeta): any {
@@ -215,7 +215,7 @@ export class PatchPack {
     return notepack.encode(data)
   }
 
-  public decodePatch (buffer: Buffer): IReversibleJsonPatch {
+  public decodePatch (buffer: Buffer, updateSchema = true): IReversibleJsonPatch {
 
     // encode patch
     const encodedPatch = notepack.decode<TSchemaPatch>(buffer)
@@ -246,9 +246,9 @@ export class PatchPack {
       const value = values.reverse().pop()
       if (parent.type === MAP_NODE && patch.op === "add") {
         parent.keys?.push(key as string)
-        patch.value = this.decodeNode(value[1], { parent, key, index: propIndex })
+        patch.value = this.decodeNode(value[1], { parent, key, index: propIndex, updateSchema })
       } else {
-        patch.value = this.decodeNode(value, { parent, key, index: propIndex })
+        patch.value = this.decodeNode(value, { parent, key, index: propIndex, updateSchema })
       }
     }
 
