@@ -55,7 +55,7 @@ const state: any = {
 // create patchpack instance and define schema types
 const ppServer = new PatchPack({
   State: ["clients", "objects", "foo"],
-  Client, // it is recommended to use class in schema
+  Client, // it is recommended to use class in schema (better performance)
   Object: ["id", "name", "foo"],
   Foo: ["baz"]
 })
@@ -173,10 +173,10 @@ First time state encoding must be with `updateSchema = true`. If you need to enc
 ### decodeState
 Decode state from binary format to object
 ```ts
-decodeState(buffer: Buffer, updateSchema = true): any
+decodeState(buffer: Buffer): any
 ```
 
-First time state decoding must be with `updateSchema = true`. If you need to decode the same state second time `updateSchema` must be set as `false`.
+!Important. State can be decoded only once.
 
 Example:
 ```ts
@@ -220,10 +220,10 @@ const p1 = pp.encodePatch({
 ### decodePatch
 Decode patch from binary format to JsonPatch (or ReversibleJsonPatch).
 ```ts
-decodePatch (buffer: Buffer, updateSchema = true): IReversibleJsonPatch
+decodePatch (buffer: Buffer): IReversibleJsonPatch
 ```
 
-First time patch decoding must be with `updateSchema = true`. If you need to decode the same patch second time `updateSchema` must be set as `false`.
+!Important. Patch can be decoded only once.
 
 ### PatchPack.encode
 Encode object to binary with last MessagePack specification.
